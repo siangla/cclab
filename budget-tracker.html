@@ -144,8 +144,8 @@ function getExpenses(y, m) { return load('bgt_exp_' + monthKey(y, m)) || []; }
 function setExpenses(y, m, arr) { save('bgt_exp_' + monthKey(y, m), arr); }
 function getBudgets() {
   return load('bgt_budgets') || {
-    food: 15000, transport: 1500, housing: 20000, entertain: 1000,
-    health: 500, shopping: 1000, edu: 1000, other: 1000
+    food: 12000, transport: 1000, housing: 20000, entertain: 1000,
+    health: 500, shopping: 1000, edu: 0, other: 500
   };
 }
 function catById(id) { return CATS.find(c => c.id === id) || CATS[CATS.length - 1]; }
