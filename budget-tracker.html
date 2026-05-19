@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>月度預算追蹤器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="budget-tracker.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <div class="logo">預算<span>追蹤</span></div>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)" aria-label="上一個月">&#8592;</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button onclick="changeMonth(1)" aria-label="下一個月">&#8594;</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────── -->
+<main>
+
+  <!-- Alerts -->
+  <div class="alerts" id="alerts"></div>
+
+  <!-- Summary strip -->
+  <div class="summary-strip" id="summaryStrip"></div>
+
+  <!-- Left column -->
+  <div class="left-col">
+    <div class="card">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('overview', this)">
+          <span class="tab-icon">◎</span>總覽
+        </button>
+        <button class="tab" onclick="switchTab('budget', this)">
+          <span class="tab-icon">◈</span>預算設定
+        </button>
+        <button class="tab" onclick="switchTab('history', this)">
+          <span class="tab-icon">☰</span>支出明細
+        </button>
+      </div>
+
+      <!-- Panel: Overview -->
+      <div id="tab-overview" class="panel active">
+        <div class="chart-layout">
+          <div class="chart-wrap">
+            <canvas id="pieChart" role="img" aria-label="各類別支出圓餅圖"></canvas>
+          </div>
+          <div class="legend" id="pieLegend"></div>
+        </div>
+        <div class="cat-list" id="catProgress"></div>
+      </div>
+
+      <!-- Panel: Budget settings -->
+      <div id="tab-budget" class="panel">
+        <div class="budget-grid" id="budgetForm"></div>
+        <div class="budget-save-bar">
+          <button class="btn-primary" onclick="saveBudgets()">儲存預算設定</button>
+        </div>
+      </div>
+
+      <!-- Panel: History -->
+      <div id="tab-history" class="panel">
+        <div class="history-toolbar">
+          <button class="btn-sm btn-danger" onclick="clearMonth()">清除本月紀錄</button>
+        </div>
+        <div class="exp-list" id="expenseList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="right-col">
+    <div class="quick-add">
+      <div class="card-header">
+        <div class="card-title">記帳</div>
+      </div>
+      <div class="form-body">
+        <div class="form-row">
+          <label for="expCat">類別</label>
+          <select id="expCat"></select>
+        </div>
+        <div class="form-row">
+          <label for="expDesc">描述</label>
+          <input type="text" id="expDesc" placeholder="e.g. 午餐、計程車費">
+        </div>
+        <div class="form-row">
+          <label for="expAmt">金額 (NT$)</label>
+          <input type="number" id="expAmt" min="1" placeholder="0">
+        </div>
+        <div class="form-row">
+          <label for="expDate">日期</label>
+          <input type="date" id="expDate">
+        </div>
+        <button class="btn-primary" onclick="addExpense()">＋ 新增支出</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Footer ──────────────────────────────── -->
+<footer>月度預算追蹤器 &mdash; 資料儲存於本機瀏覽器</footer>
+
+<!-- ── JavaScript ──────────────────────────── -->
+<script>
+const CATS = [
+  { id: 'food',      name: '餐飲', icon: '🍜', color: '#1d9e75', bg: '#e4f3eb', text: '#1d7a52' },
+  { id: 'transport', name: '交通', icon: '🚌', color: '#378add', bg: '#e6f1fb', text: '#185fa5' },
+  { id: 'housing',   name: '住房', icon: '🏠', color: '#7f77dd', bg: '#eeedfe', text: '#534ab7' },
+  { id: 'entertain', name: '娛樂', icon: '🎬', color: '#d4537e', bg: '#fbeaf0', text: '#993556' },
+  { id: 'health',    name: '醫療', icon: '💊', color: '#c8502a', bg: '#f5ebe5', text: '#9e3d1e' },
+  { id: 'shopping',  name: '購物', icon: '🛍️', color: '#ba7517', bg: '#faeeda', text: '#854f0b' },
+  { id: 'edu',       name: '教育', icon: '📚', color: '#3b6d11', bg: '#eaf3de', text: '#2d5a0d' },
+  { id: 'other',     name: '其他', icon: '📦', color: '#888780', bg: '#f1efe8', text: '#5f5e5a' },
+];
+
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let pieChart     = null;
+
+/* ── Storage helpers ──────────────────────── */
+function monthKey(y, m) {
+  return `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+function load(k) {
+  try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; }
+}
+function save(k, v) {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+}
+function getExpenses(y, m) { return load('bgt_exp_' + monthKey(y, m)) || []; }
+function setExpenses(y, m, arr) { save('bgt_exp_' + monthKey(y, m), arr); }
+function getBudgets() {
+  return load('bgt_budgets') || {
+    food: 15000, transport: 5000, housing: 20000, entertain: 5000,
+    health: 3000, shopping: 8000, edu: 3000, other: 5000
+  };
+}
+function catById(id) { return CATS.find(c => c.id === id) || CATS[CATS.length - 1]; }
+
+/* ── Navigation ───────────────────────────── */
+function changeMonth(d) {
+  currentMonth += d;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+  renderAll();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── Data helpers ─────────────────────────── */
+function getTotals(expenses) {
+  const t = {};
+  CATS.forEach(c => t[c.id] = 0);
+  expenses.forEach(e => { t[e.cat] = (t[e.cat] || 0) + e.amount; });
+  return t;
+}
+
+function fmt(n) {
+  return 'NT$' + Math.round(n).toLocaleString('zh-TW');
+}
+
+/* ── Render ───────────────────────────────── */
+function renderAll() {
+  const y = currentYear, m = currentMonth;
+  const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('monthLabel').textContent = `${y}年 ${MONTHS[m]}`;
+
+  const expenses    = getExpenses(y, m);
+  const budgets     = getBudgets();
+  const totals      = getTotals(expenses);
+  const totalSpent  = Object.values(totals).reduce((a, b) => a + b, 0);
+  const totalBudget = Object.values(budgets).reduce((a, b) => a + b, 0);
+  const remaining   = totalBudget - totalSpent;
+  const usedPct     = totalBudget > 0 ? Math.round(totalSpent / totalBudget * 100) : 0;
+
+  renderSummary(totalBudget, totalSpent, remaining, usedPct);
+  renderAlerts(totals, budgets);
+  renderPieChart(totals, totalSpent);
+  renderLegend(totals, totalSpent);
+  renderCatProgress(totals, budgets);
+  renderCatSelect();
+  renderBudgetForm(budgets);
+  renderExpenseList(expenses);
+}
+
+function renderSummary(totalBudget, totalSpent, remaining, usedPct) {
+  const remClass = remaining < 0 ? 'danger' : remaining < totalBudget * 0.1 ? 'warning' : 'success';
+  const barOk    = remaining < 0 ? '#c8502a' : remaining < totalBudget * 0.1 ? '#c49a3c' : '#2d7a4f';
+  const cards = [
+    { label: '總預算',   value: fmt(totalBudget),                     cls: '',       bar: '#1a1714' },
+    { label: '已支出',   value: totalSpent > 0 ? fmt(totalSpent) : '—', cls: '',     bar: '#c8502a' },
+    { label: '剩餘額度', value: fmt(remaining),                        cls: remClass, bar: barOk    },
+    { label: '使用率',   value: usedPct + '%',                         cls: remClass, bar: barOk    },
+  ];
+  document.getElementById('summaryStrip').innerHTML = cards.map(c =>
+    `<div class="metric-card" style="--bar-color:${c.bar}">
+       <div class="metric-label">${c.label}</div>
+       <div class="metric-value ${c.cls}">${c.value}</div>
+     </div>`
+  ).join('');
+}
+
+function renderAlerts(totals, budgets) {
+  let html = '';
+  CATS.forEach(c => {
+    const spent  = totals[c.id] || 0;
+    const budget = budgets[c.id] || 0;
+    if (budget > 0 && spent > budget) {
+      html += `<div class="alert alert-danger">
+        <span class="alert-icon">⚠</span>
+        <strong>${c.name}</strong>&nbsp;已超支 ${fmt(spent - budget)}（預算 ${fmt(budget)}，已花 ${fmt(spent)}）
+      </div>`;
+    } else if (budget > 0 && spent > budget * 0.85) {
+      html += `<div class="alert alert-warning">
+        <span class="alert-icon">◉</span>
+        <strong>${c.name}</strong>&nbsp;即將用盡，已使用 ${Math.round(spent / budget * 100)}%
+      </div>`;
+    }
+  });
+  document.getElementById('alerts').innerHTML = html;
+}
+
+function renderPieChart(totals, totalSpent) {
+  const pieData   = CATS.map(c => totals[c.id] || 0);
+  const pieColors = CATS.map(c => c.color);
+  if (pieChart) pieChart.destroy();
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  if (totalSpent > 0) {
+    pieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: CATS.map(c => c.name),
+        datasets: [{ data: pieData, backgroundColor: pieColors, borderWidth: 3, borderColor: '#ffffff', hoverBorderWidth: 3 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => { const v = ctx.raw; const pct = totalSpent > 0 ? Math.round(v / totalSpent * 100) : 0; return ` ${fmt(v)} (${pct}%)`; } } }
+        }
+      }
+    });
+  } else {
+    pieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { datasets: [{ data: [1], backgroundColor: ['#e8e4de'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+    });
+  }
+}
+
+function renderLegend(totals, totalSpent) {
+  const activeCats = CATS.filter(c => (totals[c.id] || 0) > 0);
+  const display    = activeCats.length ? activeCats : CATS.slice(0, 4);
+  document.getElementById('pieLegend').innerHTML = display.map(c =>
+    `<div class="legend-item">
+       <div class="legend-dot" style="background:${c.color}"></div>
+       <div class="legend-name">${c.name}</div>
+       <div class="legend-amt">${totals[c.id] > 0 ? fmt(totals[c.id]) : '—'}</div>
+       <div class="legend-pct">${totalSpent > 0 && totals[c.id] > 0 ? Math.round(totals[c.id] / totalSpent * 100) + '%' : ''}</div>
+     </div>`
+  ).join('');
+}
+
+function renderCatProgress(totals, budgets) {
+  document.getElementById('catProgress').innerHTML = CATS.map(c => {
+    const spent  = totals[c.id] || 0;
+    const budget = budgets[c.id] || 1;
+    const pct    = Math.min(100, Math.round(spent / budget * 100));
+    const over   = spent > (budgets[c.id] || 0);
+    return `<div class="cat-row">
+      <div class="cat-icon" style="background:${c.bg}">${c.icon}</div>
+      <div class="cat-info">
+        <div class="cat-name">${c.name}</div>
+        <div class="cat-amounts">${fmt(spent)} / ${fmt(budgets[c.id] || 0)}</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar" style="width:${pct}%;background:${over ? '#c8502a' : c.color}"></div>
+      </div>
+      <div class="cat-pct" style="color:${over ? '#c8502a' : c.color}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCatSelect() {
+  const el = document.getElementById('expCat');
+  if (el) el.innerHTML = CATS.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+}
+
+function renderBudgetForm(budgets) {
+  const el = document.getElementById('budgetForm');
+  if (el) el.innerHTML = CATS.map(c =>
+    `<div class="budget-row">
+       <div class="budget-icon" style="background:${c.bg}">${c.icon}</div>
+       <div class="budget-name">${c.name}</div>
+       <div class="budget-input-wrap">
+         <span class="budget-currency">NT$</span>
+         <input type="number" class="budget-input" id="b_${c.id}" value="${budgets[c.id] || 0}" min="0">
+       </div>
+     </div>`
+  ).join('');
+}
+
+function renderExpenseList(expenses) {
+  const el = document.getElementById('expenseList');
+  if (!el) return;
+  const sorted = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (sorted.length === 0) {
+    el.innerHTML = `<div class="empty-state"><span class="empty-icon">🧾</span><div class="empty-text">本月尚無支出紀錄</div></div>`;
+  } else {
+    el.innerHTML = sorted.map(e => {
+      const c = catById(e.cat);
+      return `<div class="exp-item">
+        <span class="exp-badge" style="background:${c.bg};color:${c.text}">${c.icon} ${c.name}</span>
+        <span class="exp-desc" title="${e.desc || ''}">${e.desc || '—'}</span>
+        <span class="exp-date">${e.date}</span>
+        <span class="exp-amt">${fmt(e.amount)}</span>
+        <span class="exp-del">
+          <button class="btn-sm btn-danger" onclick="deleteExpense('${e.id}')" aria-label="刪除">✕</button>
+        </span>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ── Actions ──────────────────────────────── */
+function addExpense() {
+  const cat  = document.getElementById('expCat').value;
+  const desc = document.getElementById('expDesc').value.trim();
+  const amt  = Number(document.getElementById('expAmt').value);
+  const date = document.getElementById('expDate').value;
+  if (!amt || amt <= 0) { alert('請輸入有效金額'); return; }
+  if (!date)            { alert('請選擇日期');     return; }
+  const d  = new Date(date);
+  const ey = d.getFullYear(), em = d.getMonth();
+  const expenses = getExpenses(ey, em);
+  expenses.push({ id: Date.now().toString(), cat, desc, amount: Math.round(amt), date });
+  setExpenses(ey, em, expenses);
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expAmt').value  = '';
+  currentYear = ey; currentMonth = em;
+  renderAll();
+}
+
+function deleteExpense(id) {
+  const arr = getExpenses(currentYear, currentMonth).filter(e => e.id !== id);
+  setExpenses(currentYear, currentMonth, arr);
+  renderAll();
+}
+
+function clearMonth() {
+  if (confirm(`確定要清除 ${currentYear}年${currentMonth + 1}月 所有支出紀錄？`)) {
+    setExpenses(currentYear, currentMonth, []);
+    renderAll();
+  }
+}
+
+function saveBudgets() {
+  const b = {};
+  CATS.forEach(c => {
+    const el = document.getElementById('b_' + c.id);
+    if (el) b[c.id] = Math.max(0, Number(el.value) || 0);
+  });
+  save('bgt_budgets', b);
+  renderAll();
+  alert('✓ 預算已儲存');
+}
+
+/* ── Init ─────────────────────────────────── */
+document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+renderAll();
+</script>
+
+</body>
+</html>
