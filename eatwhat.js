@@ -647,6 +647,13 @@ async function fbPull() {
 
 // ─── Firebase：手動推送 ───────────────────────────────────────
 async function fbPush() {
+  const confirmed = document.getElementById('fb-push-confirm');
+  if (!confirmed || !confirmed.checked) {
+    showToast('⚠️ 請先勾選確認再推送');
+    return;
+  }
+  confirmed.checked = false; // 推送後自動取消勾選
+
   const url = document.getElementById('firebase-url').value.trim();
   const key = document.getElementById('firebase-key').value.trim();
   if (!url) { showToast('⚠️ 請輸入 Firebase URL'); return; }
