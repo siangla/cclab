@@ -280,9 +280,9 @@ function renderSuggestions(dow, isExercise) {
     chip.addEventListener('click', () => {
       const lunch  = document.getElementById('modal-lunch');
       const dinner = document.getElementById('modal-dinner');
-      if (!lunch.value) lunch.value = f;
-      else if (!dinner.value) dinner.value = f;
-      else lunch.value = f;
+      if (!dinner.value) dinner.value = f;
+      else if (!lunch.value) lunch.value = f;
+      else dinner.value = f;
     });
     list.appendChild(chip);
   });
@@ -873,7 +873,42 @@ function bindEvents() {
   });
   document.getElementById('import-confirm').addEventListener('click', applyImport);
   document.getElementById('import-cancel').addEventListener('click', cancelImport);
+  
+  // 計算機
+  let calcExpr = '';
+  const calcDisplay = document.getElementById('calc-display');
+  const calcPanel   = document.getElementById('calc-panel');
 
+  document.getElementById('calc-btn').addEventListener('click', () => {
+    calcPanel.classList.toggle('hidden');
+    calcExpr = '';
+    calcDisplay.textContent = '0';
+  });
+
+  document.querySelectorAll('.calc-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.textContent.trim();
+      if (t === 'C') {
+        calcExpr = ''; calcDisplay.textContent = '0';
+      } else if (t === '✓ 確認') {
+        const result = calcDisplay.textContent;
+        if (result !== 'ERROR') document.getElementById('modal-cost').value = result;
+        calcPanel.classList.add('hidden');
+      } else if (t === '=') {
+        try {
+          // 把顯示符號換回 JS 運算符
+          const expr = calcExpr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+          const result = Math.round(Function('"use strict"; return (' + expr + ')')() * 100) / 100;
+          calcDisplay.textContent = isFinite(result) ? String(result) : 'ERROR';
+          calcExpr = String(result);
+        } catch { calcDisplay.textContent = 'ERROR'; calcExpr = ''; }
+      } else {
+        calcExpr += t;
+        calcDisplay.textContent = calcExpr;
+      }
+    });
+  });
+   
   // Esc
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
