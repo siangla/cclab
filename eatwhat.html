@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>今天吃什麼？</title>
+  <link rel="stylesheet" href="eatwhat.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">🍱</span>
+      <h1>今天吃什麼？</h1>
+    </div>
+    <nav class="header-nav">
+      <button class="nav-btn active" data-view="calendar">📅 月曆</button>
+      <button class="nav-btn" data-view="settings">⚙️ 設定</button>
+      <button class="nav-btn" data-view="excel">📊 Excel</button>
+      <button class="nav-btn" data-view="share">🔗 共用</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- CALENDAR VIEW -->
+  <section id="view-calendar" class="view active">
+    <div class="calendar-toolbar">
+      <button id="prev-month" class="arrow-btn">‹</button>
+      <h2 id="month-label">2024年1月</h2>
+      <button id="next-month" class="arrow-btn">›</button>
+      <button id="today-btn" class="today-btn">今天</button>
+      <button id="random-btn" class="random-btn">🎲 隨機選餐</button>
+    </div>
+
+    <div class="month-stats" id="month-stats">
+      <span class="stat-item">📅 本月記錄 <strong id="stat-records">0</strong> 天</span>
+      <span class="stat-sep">·</span>
+      <span class="stat-item">🏃 運動 <strong id="stat-exercise">0</strong> 天</span>
+      <span class="stat-sep">·</span>
+      <span class="stat-item">💰 本月花費 <strong id="stat-cost">NT$0</strong></span>
+    </div>
+
+    <div id="random-result" class="random-result hidden">
+      <div class="random-result-inner">
+        <span class="random-emoji">🍽️</span>
+        <div>
+          <p class="random-label">今天推薦</p>
+          <p id="random-food-name" class="random-food"></p>
+        </div>
+        <button id="random-close" class="close-x">✕</button>
+      </div>
+    </div>
+
+    <div class="calendar-grid" id="calendar-grid"></div>
+
+    <div class="legend">
+      <span class="legend-item"><span class="dot dot-exercise"></span>運動日</span>
+      <span class="legend-item"><span class="dot dot-meal"></span>已記錄餐點</span>
+      <span class="legend-item"><span class="dot dot-planned"></span>預計餐點</span>
+    </div>
+  </section>
+
+  <!-- SETTINGS VIEW -->
+  <section id="view-settings" class="view">
+    <div class="settings-container">
+      <h2 class="section-title">🍽️ 餐點設定</h2>
+      <p class="section-desc">設定所有天共用的基本餐點清單，再透過「特定星期加菜」為個別星期增加額外選項。</p>
+
+      <div class="exercise-toggle-row">
+        <span class="toggle-label">🏃 運動日（基本清單）</span>
+        <p class="override-hint" style="margin-bottom:8px">所有天運動日都可選這些餐點</p>
+        <div class="meal-list" id="food-exercise"></div>
+        <button class="add-food-btn" data-target="exercise">+ 新增餐點</button>
+      </div>
+      <div class="exercise-toggle-row">
+        <span class="toggle-label">🛋️ 非運動日（基本清單）</span>
+        <p class="override-hint" style="margin-bottom:8px">所有天非運動日都可選這些餐點</p>
+        <div class="meal-list" id="food-normal"></div>
+        <button class="add-food-btn" data-target="normal">+ 新增餐點</button>
+      </div>
+
+      <div class="settings-per-day">
+        <h3 class="sub-title">➕ 特定星期加菜</h3>
+        <p class="section-desc">為特定星期增加額外餐點選項，與基本清單合併後供選擇。留空則只用基本清單。</p>
+        <div class="day-overrides" id="day-overrides"></div>
+      </div>
+
+      <p class="autosave-hint">✦ 新增或刪除餐點時會自動儲存</p>
+    </div>
+  </section>
+
+  <!-- EXCEL VIEW -->
+  <section id="view-excel" class="view">
+    <div class="excel-container">
+      <h2 class="section-title">📊 Excel 匯出 / 匯入</h2>
+      <p class="section-desc">將所有飲食記錄與設定檔匯出為 Excel，或從 Excel 匯入資料（支援完整備份與還原）。</p>
+
+      <div class="excel-cards">
+        <div class="excel-card">
+          <div class="excel-card-icon">⬇️</div>
+          <h3>匯出 Excel</h3>
+          <p>將所有資料匯出成 <code>.xlsx</code> 檔案，包含：</p>
+          <ul class="excel-feature-list">
+            <li>📅 所有日期的飲食記錄（午餐、晚餐、花費、備註、運動日）</li>
+            <li>⚙️ 設定檔（週間 / 週末 × 運動 / 一般的餐點清單）</li>
+            <li>📋 特定星期覆蓋設定</li>
+            <li>📊 月份統計摘要</li>
+          </ul>
+          <button class="export-btn" id="export-excel">⬇️ 匯出 Excel</button>
+        </div>
+
+        <div class="excel-card">
+          <div class="excel-card-icon">⬆️</div>
+          <h3>匯入 Excel</h3>
+          <p>從先前匯出的 <code>.xlsx</code> 檔案還原所有資料。</p>
+          <ul class="excel-feature-list">
+            <li>⚠️ 匯入後會覆蓋現有資料，建議先匯出備份</li>
+            <li>✅ 匯入前會顯示預覽確認視窗</li>
+            <li>🔄 同時還原記錄與設定檔</li>
+            <li>☁️ 可選擇同步至 Firebase 資料庫</li>
+          </ul>
+          <label class="import-btn-label">
+            ⬆️ 選擇 Excel 檔案
+            <input type="file" id="import-excel" accept=".xlsx" style="display:none" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Import preview -->
+      <div id="import-preview" class="import-preview hidden">
+        <h3 class="preview-title">📋 匯入預覽</h3>
+        <div id="preview-content" class="preview-content"></div>
+        <div class="preview-actions">
+          <button class="save-btn" id="import-confirm">✅ 確認匯入（本機）</button>
+          <button class="secondary-btn" id="import-cancel">取消</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHARE VIEW -->
+  <section id="view-share" class="view">
+    <div class="share-container">
+      <h2 class="section-title">🔗 共用資料庫</h2>
+      <p class="section-desc">使用「離線優先」模式與他人共用資料：平常在本機編輯，需要同步時再手動拉取或推送。</p>
+
+      <div class="share-how">
+        <div class="how-card how-card-pull">
+          <div class="how-num">①</div>
+          <div>
+            <p class="how-title">📥 拉取（從 Firebase 取得最新資料）</p>
+            <p>開始編輯前先拉取，確保拿到最新版本。資料存入本機後即可離線操作。</p>
+          </div>
+        </div>
+        <div class="how-arrow">→</div>
+        <div class="how-card how-card-edit">
+          <div class="how-num">②</div>
+          <div>
+            <p class="how-title">✏️ 離線編輯</p>
+            <p>所有操作（月曆、設定）都只寫本機，速度快、不受網路影響。</p>
+          </div>
+        </div>
+        <div class="how-arrow">→</div>
+        <div class="how-card how-card-push">
+          <div class="how-num">③</div>
+          <div>
+            <p class="how-title">📤 推送（將本機資料上傳）</p>
+            <p>編輯完成後推送，對方拉取即可看到最新內容。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="share-steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <p class="step-title">建立 Firebase 專案</p>
+            <p>前往 <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a>，建立新專案（免費 Spark 方案即可）。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <p class="step-title">開啟 Realtime Database</p>
+            <p>在專案中新增 Realtime Database，規則設為 <code>read/write: true</code>（測試模式）。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <p class="step-title">填入 URL 並操作</p>
+            <p>複製資料庫 URL（如 <code>https://your-project-default-rtdb.firebaseio.com</code>），填到下方後即可拉取或推送。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="firebase-form">
+        <label>Firebase 資料庫 URL</label>
+        <input type="url" id="firebase-url" placeholder="https://your-project-default-rtdb.firebaseio.com" />
+        <label>共用密鑰（自訂，讓朋友輸入相同密鑰才能共享）</label>
+        <input type="text" id="firebase-key" placeholder="例如：myfamily2024" />
+        <div class="fb-action-row">
+          <button class="fb-pull-btn" id="fb-pull-btn">📥 拉取 Firebase 資料</button>
+          <button class="fb-push-btn" id="fb-push-btn">📤 推送至 Firebase</button>
+          <button class="secondary-btn" id="fb-clear-btn">🗑️ 清除設定</button>
+        </div>
+      </div>
+
+      <div id="firebase-status" class="firebase-status"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- DAY MODAL -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-date-title">1月1日</h3>
+      <button id="modal-close" class="close-x">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field modal-field-row">
+        <label>🏃 運動日</label>
+        <label class="switch">
+          <input type="checkbox" id="modal-exercise" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="modal-field">
+        <label>🍽️ 午餐</label>
+        <div class="input-row">
+          <input type="text" id="modal-lunch" placeholder="輸入或從下方選擇" />
+          <button class="dice-btn" data-meal="lunch">🎲</button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>🌙 晚餐</label>
+        <div class="input-row">
+          <input type="text" id="modal-dinner" placeholder="輸入或從下方選擇" />
+          <button class="dice-btn" data-meal="dinner">🎲</button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>💰 花費（元）</label>
+        <input type="number" id="modal-cost" placeholder="0" min="0" />
+      </div>
+      <div class="modal-field">
+        <label>📝 備註</label>
+        <input type="text" id="modal-note" placeholder="選填" />
+      </div>
+      <div class="modal-field">
+        <label>狀態</label>
+        <div class="status-btns">
+          <button class="status-btn" data-status="planned">預計</button>
+          <button class="status-btn active" data-status="actual">已吃</button>
+        </div>
+      </div>
+      <div class="suggest-row">
+        <p class="suggest-label">推薦餐點：</p>
+        <div id="suggest-list" class="suggest-list"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="save-btn" id="modal-save">💾 儲存</button>
+      <button class="danger-btn" id="modal-delete">🗑️ 清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD FOOD MODAL -->
+<div id="addfood-overlay" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>新增餐點</h3>
+      <button id="addfood-close" class="close-x">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="addfood-input" placeholder="餐點名稱，例如：便當、滷肉飯" />
+    </div>
+    <div class="modal-footer">
+      <button class="save-btn" id="addfood-confirm">新增</button>
+    </div>
+  </div>
+</div>
+
+<script src="eatwhat.js"></script>
+</body>
+</html>
