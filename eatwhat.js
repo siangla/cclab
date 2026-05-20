@@ -206,7 +206,7 @@ function renderCalendar() {
       const sc = rec.status || 'actual';
       if (rec.lunch) {
         const t = document.createElement('div'); t.className = `day-meal-tag ${sc}`;
-        t.textContent = `🍽 ${rec.lunch}`; mealsEl.appendChild(t);
+        t.textContent = `🍳 ${rec.lunch}`; mealsEl.appendChild(t);
       }
       if (rec.dinner) {
         const t = document.createElement('div'); t.className = `day-meal-tag ${sc}`;
