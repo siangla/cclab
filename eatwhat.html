@@ -240,7 +240,7 @@
         </label>
       </div>
       <div class="modal-field">
-        <label>🍽️ 午餐</label>
+        <label>🍳 早午餐</label>
         <div class="input-row">
           <input type="text" id="modal-lunch" placeholder="輸入或從下方選擇" />
           <button class="dice-btn" data-meal="lunch">🎲</button>
@@ -255,7 +255,34 @@
       </div>
       <div class="modal-field">
         <label>💰 花費（元）</label>
-        <input type="number" id="modal-cost" placeholder="0" min="0" />
+        <div class="input-row">
+          <input type="number" id="modal-cost" placeholder="0" min="0" />
+          <button class="dice-btn" id="calc-btn" type="button">🧮</button>
+        </div>
+      </div>
+      <!-- 計算機面板，放在花費欄位下方 -->
+      <div id="calc-panel" class="calc-panel hidden">
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-btns">
+          <button class="calc-btn calc-clear">C</button>
+          <button class="calc-btn calc-op">÷</button>
+          <button class="calc-btn calc-op">×</button>
+          <button class="calc-btn calc-op">−</button>
+          <button class="calc-btn">7</button>
+          <button class="calc-btn">8</button>
+          <button class="calc-btn">9</button>
+          <button class="calc-btn calc-op calc-op-plus">+</button>
+          <button class="calc-btn">4</button>
+          <button class="calc-btn">5</button>
+          <button class="calc-btn">6</button>
+          <button class="calc-btn calc-btn-wide calc-eq">=</button>
+          <button class="calc-btn">1</button>
+          <button class="calc-btn">2</button>
+          <button class="calc-btn">3</button>
+          <button class="calc-btn calc-btn-wide calc-zero">0</button>
+          <button class="calc-btn calc-dot">.</button>
+          <button class="calc-btn calc-ok">✓ 確認</button>
+        </div>
       </div>
       <div class="modal-field">
         <label>📝 備註</label>
