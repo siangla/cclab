@@ -49,7 +49,7 @@ function migrateLegacySettings(old) {
 
 
 
-// ─── State ────────────────────────────────────────────────────
+// ───  ────────────────────────────────────────────────────
 let state = {
   year:  new Date().getFullYear(),
   month: new Date().getMonth(),
@@ -253,7 +253,7 @@ function openModal(dateStr) {
   document.getElementById('modal-dinner').value = rec.dinner || '';
   document.getElementById('modal-cost').value   = rec.cost   || '';
   document.getElementById('modal-note').value   = rec.note   || '';
-  state.modalStatus = rec.status || 'actual';
+  state.modalStatus = rec.status || 'planned';
   updateStatusBtns();
   renderSuggestions(dow, isExercise);
   document.getElementById('modal-overlay').classList.remove('hidden');
