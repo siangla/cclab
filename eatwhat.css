@@ -498,3 +498,39 @@ input:checked + .slider:before { transform: translateX(20px); }
 .fb-confirm-label input[type="checkbox"] {
   width: 16px; height: 16px; cursor: pointer; accent-color: #c44;
 }
+
+
+/*計算機樣式*/
+.calc-panel {
+  background: var(--ink); border-radius: var(--radius-sm);
+  padding: 10px; margin-top: 4px;
+}
+.calc-panel.hidden { display: none; }
+.calc-display {
+  background: #111; color: #fff; font-size: 1.3rem; font-weight: 700;
+  text-align: right; padding: 8px 12px; border-radius: var(--radius-sm);
+  margin-bottom: 8px; min-height: 42px; word-break: break-all;
+  font-family: var(--font);
+}
+.calc-btns {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+}
+.calc-btn {
+  background: #3a3a3a; color: #fff; border: none;
+  border-radius: 6px; padding: 10px 4px; font-size: 0.95rem;
+  font-family: var(--font); font-weight: 600; cursor: pointer;
+  transition: background 0.12s;
+}
+.calc-btn:hover { background: #555; }
+.calc-op { background: #c4623a; }
+.calc-op:hover { background: #e8856b; }
+.calc-op-plus { grid-row: span 2; }
+.calc-eq { background: #3a6645; grid-row: span 2; }
+.calc-eq:hover { background: #5a8c69; }
+.calc-zero { grid-column: span 2; }
+.calc-clear { background: #8a3a2a; }
+.calc-clear:hover { background: #b04a36; }
+.calc-ok {
+  background: #1a73e8; grid-column: span 2;
+}
+.calc-ok:hover { background: #4da6ff; }
