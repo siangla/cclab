@@ -570,6 +570,19 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .random-group-select:focus { outline: none; border-color: var(--terracotta); }
 
+
+/* ── Pull to Refresh ── */
+#ptr-indicator {
+  position: fixed; top: -40px; left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: var(--ink); color: #fff;
+  padding: 8px 20px; border-radius: 99px;
+  font-size: 0.85rem; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  z-index: 9998; transition: opacity 0.1s;
+  white-space: nowrap;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .excel-cards { grid-template-columns: 1fr; }

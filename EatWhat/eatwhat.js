@@ -840,11 +840,19 @@ async function fbPull() {
     if (validSett && applySettings(validSett)) lsSave('settings', state.settings);
     if (validRecs && applyRecords(validRecs))  lsSave('records',  state.records);
 
+    // 群組
+    const rawGroups = await fbFetch('groups').catch(() => null);
+    if (rawGroups && typeof rawGroups === 'object' && !Array.isArray(rawGroups)) {
+      state.groups = rawGroups; lsSave('groups', rawGroups);
+    }
+
     // 儲存 config
     localStorage.setItem('mealplan_firebase_cfg', JSON.stringify(state.firebaseCfg));
 
     renderCalendar();
     renderSettings();
+    renderGroups();
+    renderGroupSelect();
 
     let note;
     if (!validSett && !validRecs) {
@@ -852,7 +860,8 @@ async function fbPull() {
     } else {
       const recCount  = validRecs  ? Object.keys(validRecs).length : 0;
       const foodCount = state.settings ? Object.values(state.settings.foods).reduce((s,a) => s + a.length, 0) : 0;
-      note = `共 ${recCount} 筆記錄、${foodCount} 項餐點設定已存入本機。`;
+      const grpCount  = Object.keys(state.groups).length;
+      note = `共 ${recCount} 筆記錄、${foodCount} 項餐點設定、${grpCount} 個群組已存入本機。`;
     }
     setShareStatus('ok', `✅ 拉取成功！${note}（${new Date().toLocaleTimeString()}）`);
     showToast('☁️ Firebase 資料拉取完成！');
@@ -892,11 +901,13 @@ async function fbPush() {
     await Promise.all([
       fbFetch('settings', 'PUT', state.settings),
       fbFetch('records',  'PUT', state.records),
+      fbFetch('groups',   'PUT', state.groups),
     ]);
 
     // 同時更新本機，確保一致
     lsSave('settings', state.settings);
     lsSave('records',  state.records);
+    lsSave('groups',   state.groups);
     localStorage.setItem('mealplan_firebase_cfg', JSON.stringify(state.firebaseCfg));
 
     setShareStatus('ok', `✅ 全量推送成功！共 ${recCount} 筆記錄、${foodCount} 項餐點設定。（${new Date().toLocaleTimeString()}）`);
@@ -1157,6 +1168,52 @@ function bindEvents() {
     if (e.key !== 'Escape') return;
     if (!document.getElementById('addfood-overlay').classList.contains('hidden')) closeAddFood();
     else if (!document.getElementById('modal-overlay').classList.contains('hidden')) closeModal();
+  });
+
+  // ── Pull to Refresh（下拉重新整理）──
+  let ptrStartY = 0;
+  let ptrDist   = 0;
+  let ptrActive = false;
+  const PTR_THRESHOLD = 72; // px，需要拉多遠才觸發
+
+  // 建立提示 UI
+  const ptrEl = document.createElement('div');
+  ptrEl.id = 'ptr-indicator';
+  ptrEl.textContent = '↓ 下拉重新整理';
+  document.body.appendChild(ptrEl);
+
+  document.addEventListener('touchstart', e => {
+    // 只在頁面頂端、沒有 modal 開著的時候啟動
+    if (window.scrollY > 0) return;
+    if (!document.getElementById('modal-overlay').classList.contains('hidden')) return;
+    if (!document.getElementById('addfood-overlay').classList.contains('hidden')) return;
+    ptrStartY = e.touches[0].clientY;
+    ptrActive = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!ptrActive) return;
+    ptrDist = e.touches[0].clientY - ptrStartY;
+    if (ptrDist <= 0) { ptrActive = false; return; }
+    const progress = Math.min(ptrDist / PTR_THRESHOLD, 1);
+    ptrEl.style.transform = `translateX(-50%) translateY(${Math.min(ptrDist * 0.4, 48)}px)`;
+    ptrEl.style.opacity   = String(progress);
+    ptrEl.textContent     = ptrDist >= PTR_THRESHOLD ? '↑ 放開以重新整理' : '↓ 下拉重新整理';
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!ptrActive) return;
+    ptrActive = false;
+    ptrEl.style.transform = '';
+    ptrEl.style.opacity   = '0';
+    ptrEl.textContent     = '↓ 下拉重新整理';
+    if (ptrDist >= PTR_THRESHOLD) {
+      ptrEl.textContent = '🔄 重新整理中…';
+      ptrEl.style.opacity = '1';
+      ptrEl.style.transform = 'translateX(-50%) translateY(20px)';
+      setTimeout(() => location.reload(), 300);
+    }
+    ptrDist = 0;
   });
 
   // ── 計算機 ──
