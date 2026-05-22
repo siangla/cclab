@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="隨機亂數">
+<meta name="theme-color" content="#7cb342">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<title>隨機亂數</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-header">
+  <span class="app-icon-emoji">🎲</span>
+  <h1>隨機亂數</h1>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('numbers')">連續數字</button>
+    <button class="tab" onclick="switchTab('strings')">貼上字串</button>
+    <button class="tab" onclick="switchTab('rps')">剪刀石頭布</button>
+  </div>
+
+  <!-- 連續數字 -->
+  <div class="panel active" id="panel-numbers">
+    <div class="row">
+      <label>從</label>
+      <input type="number" id="numFrom" placeholder="ex. 0" inputmode="numeric">
+      <label>到</label>
+      <input type="number" id="numTo" placeholder="ex. 100" inputmode="numeric">
+    </div>
+    <div class="row">
+      <label>選</label>
+      <input type="number" id="numCount" placeholder="ex. 5" min="1" inputmode="numeric">
+      <label>個數字</label>
+    </div>
+    <button class="btn-generate" onclick="generateNumbers()">⊕ 隨機產生</button>
+    <div class="result-box" id="num-result" style="display:none;"></div>
+  </div>
+
+  <!-- 貼上字串 -->
+  <div class="panel" id="panel-strings">
+    <textarea id="strInput" placeholder="每個字串以換行分隔"></textarea>
+    <div class="select-count-row">
+      <label>選</label>
+      <input type="number" id="strCount" placeholder="ex. 2" min="1" inputmode="numeric">
+      <label>個字串</label>
+    </div>
+    <button class="btn-generate" onclick="generateStrings()">⊕ 隨機產生</button>
+    <div class="result-box" id="str-result" style="display:none;"></div>
+  </div>
+
+  <!-- 剪刀石頭布 -->
+  <div class="panel" id="panel-rps">
+    <p class="rps-prompt">選擇你的出拳！</p>
+    <div class="rps-choices">
+      <div class="rps-col">
+        <button class="rps-btn" id="rps-scissors" onclick="chooseRPS('scissors')">✌️</button>
+        <div class="rps-label">剪刀</div>
+      </div>
+      <div class="rps-col">
+        <button class="rps-btn" id="rps-rock" onclick="chooseRPS('rock')">✊</button>
+        <div class="rps-label">石頭</div>
+      </div>
+      <div class="rps-col">
+        <button class="rps-btn" id="rps-paper" onclick="chooseRPS('paper')">🖐️</button>
+        <div class="rps-label">布</div>
+      </div>
+    </div>
+    <div id="rps-result-area" class="rps-result"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
