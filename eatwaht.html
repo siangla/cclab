@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>頁面已轉移</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0e0c;
+    --paper: #f5f0e8;
+    --accent: #c84b2f;
+    --accent2: #2e5fa3;
+    --line: #0f0e0c18;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif TC', serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 28px, var(--line) 28px, var(--line) 29px),
+      repeating-linear-gradient(90deg, transparent, transparent 28px, var(--line) 28px, var(--line) 29px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .corner { position: fixed; width: 80px; height: 80px; }
+  .corner::before, .corner::after { content: ''; position: absolute; background: var(--ink); }
+  .corner::before { width: 2px; height: 60px; }
+  .corner::after { width: 60px; height: 2px; }
+  .corner.tl { top: 24px; left: 24px; }
+  .corner.tr { top: 24px; right: 24px; transform: scaleX(-1); }
+  .corner.bl { bottom: 24px; left: 24px; transform: scaleY(-1); }
+  .corner.br { bottom: 24px; right: 24px; transform: scale(-1); }
+
+  .card {
+    position: relative;
+    background: #fff;
+    border: 2px solid var(--ink);
+    padding: 60px 72px;
+    max-width: 680px;
+    width: calc(100% - 48px);
+    box-shadow: 8px 8px 0 var(--ink);
+    animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(32px) rotate(-1deg); }
+    to   { opacity: 1; transform: translateY(0) rotate(0deg); }
+  }
+
+  .stamp {
+    position: absolute;
+    top: -18px; right: 36px;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    transform: rotate(-2deg);
+    box-shadow: 3px 3px 0 #8b2a17;
+    animation: stampIn 0.5s 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes stampIn {
+    from { opacity: 0; transform: rotate(-2deg) scale(0.7); }
+    to   { opacity: 1; transform: rotate(-2deg) scale(1); }
+  }
+
+  .tag-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    animation: fadeUp 0.5s 0.2s both;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    animation: fadeUp 0.5s 0.3s both;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+    position: relative;
+    display: inline-block;
+  }
+  h1 em::after {
+    content: '';
+    position: absolute;
+    bottom: 4px; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+    opacity: 0.3;
+  }
+
+  .divider {
+    border: none;
+    border-top: 2px solid var(--ink);
+    margin: 28px 0;
+    animation: fadeUp 0.5s 0.35s both;
+  }
+
+  .body-text {
+    font-size: 1rem;
+    line-height: 1.85;
+    color: #3a3630;
+    margin-bottom: 20px;
+    animation: fadeUp 0.5s 0.4s both;
+  }
+
+  .url-box {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--ink);
+    margin: 28px 0;
+    animation: fadeUp 0.5s 0.45s both;
+    overflow: hidden;
+  }
+  .url-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 14px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .url-text {
+    padding: 12px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--accent2);
+    flex: 1;
+    word-break: break-all;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+  }
+  .url-text:hover { background: #eef3fb; }
+
+  .countdown-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.5s both;
+  }
+  .countdown-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: #888;
+  }
+  .countdown-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 48px;
+    display: inline-block;
+    transition: opacity 0.2s;
+  }
+  .countdown-unit { font-size: 13px; color: #888; }
+
+  .progress-track {
+    height: 3px;
+    background: var(--line);
+    border: 1px solid #0f0e0c18;
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s 0.52s both;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    transform-origin: left;
+    animation: shrink 10s linear forwards;
+  }
+  @keyframes shrink {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
+
+  .btn {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 16px 40px;
+    text-decoration: none;
+    border: 2px solid var(--ink);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, transform 0.12s, box-shadow 0.12s;
+    box-shadow: 4px 4px 0 #00000033;
+    animation: fadeUp 0.5s 0.55s both;
+  }
+  .btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #00000022;
+  }
+  .btn:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 #00000022; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .footer-note {
+    margin-top: 28px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+    animation: fadeUp 0.5s 0.6s both;
+  }
+</style>
+</head>
+<body>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div class="card">
+  <div class="stamp">已轉移 · Moved</div>
+
+  <p class="tag-line">301 Permanent Redirect</p>
+
+  <h1>此頁面<br>已<em>搬家</em>了</h1>
+
+  <hr class="divider">
+
+  <p class="body-text">
+    您所尋找的頁面已永久移至新位址。<br>
+    請更新您的書籤，我們將在幾秒後自動帶您前往。
+  </p>
+
+  <div class="url-box">
+    <span class="url-label">新網址</span>
+    <button class="url-text" onclick="goNow()">https://siangla.github.io/cclab/EatWhat/eatwhat.html</button>
+  </div>
+
+  <div class="countdown-wrap">
+    <span class="countdown-label">自動跳轉於</span>
+    <span class="countdown-num" id="counter">5</span>
+    <span class="countdown-unit">秒後</span>
+  </div>
+
+  <div class="progress-track"><div class="progress-bar"></div></div>
+
+  <a class="btn" href="#" onclick="goNow(); return false;">立即前往新頁面 →</a>
+
+  <p class="footer-note">
+    若您的瀏覽器未自動跳轉，請點擊上方按鈕。<br>
+    如有疑問，請聯繫網站管理員。
+  </p>
+</div>
+
+<script>
+  const TARGET = 'https://www.example.com/new-page';
+  let t = 5;
+  const el = document.getElementById('counter');
+
+  function goNow() {
+    window.location.href = TARGET;
+  }
+
+  const timer = setInterval(() => {
+    t--;
+    el.style.opacity = '0.3';
+    setTimeout(() => {
+      el.textContent = t;
+      el.style.opacity = '1';
+    }, 150);
+    if (t <= 0) {
+      clearInterval(timer);
+      goNow();
+    }
+  }, 1000);
+</script>
+</body>
+</html>
