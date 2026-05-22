@@ -61,6 +61,8 @@ let state = {
   modalDate:     null,
   modalStatus:   'actual',
   importBuffer:  null,
+  // groups: { '群組名': ['餐點1','餐點2',...] }
+  groups: {},
 };
 
 // ─── LocalStorage helpers（所有日常讀寫都只碰本機）────────────
@@ -188,13 +190,19 @@ function init() {
   // 先從本機載入（同步，確保 UI 立即可用）
   applySettings(lsLoad('settings'));
   applyRecords(lsLoad('records'));
+  const savedGroups = lsLoad('groups');
+  if (savedGroups && typeof savedGroups === 'object' && !Array.isArray(savedGroups)) {
+    state.groups = savedGroups;
+  }
 
   updateSharePageUI();
   setupDayOverrides();
 
   try { renderCalendar(); } catch (e) { console.error('renderCalendar error', e); }
   try { renderSettings(); } catch (e) { console.error('renderSettings error', e); }
+  try { renderGroups(); }   catch (e) { console.error('renderGroups error', e); }
 
+  renderGroupSelect();
   bindEvents(); // 一定要執行到
 
   // 若有 Firebase config，背景自動拉取一次最新資料
@@ -217,10 +225,15 @@ async function fbAutoSync() {
     let changed = false;
     if (validSett && applySettings(validSett)) { lsSave('settings', state.settings); changed = true; }
     if (validRecs && applyRecords(validRecs))  { lsSave('records',  state.records);  changed = true; }
+    const rawGroups = await fbFetch('groups').catch(() => null);
+    if (rawGroups && typeof rawGroups === 'object' && !Array.isArray(rawGroups)) {
+      state.groups = rawGroups; lsSave('groups', rawGroups); changed = true;
+    }
 
     if (changed) {
       renderCalendar();
       renderSettings();
+      renderGroups();
     }
     const time = new Date().toLocaleTimeString();
     setShareStatus('ok', `✅ 已連線 Firebase，自動同步完成（${time}）`);
@@ -414,13 +427,107 @@ function deleteModal() {
   fbPushRecord(dateStr, null); // null = DELETE
 }
 
+// ─── Groups ───────────────────────────────────────────────────
+function renderGroups() {
+  const container = document.getElementById('group-list');
+  if (!container) return;
+  container.innerHTML = '';
+  Object.entries(state.groups).forEach(([name, foods]) => {
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.innerHTML = `
+      <div class="group-card-header">
+        <span class="group-name-icon">🗂️</span>
+        <input class="group-name-input" type="text" value="${name}" data-original="${name}" />
+        <button class="group-rename-btn" data-group="${name}" aria-label="改名">✏️</button>
+        <button class="group-delete-btn" data-group="${name}" aria-label="刪除群組">🗑️</button>
+      </div>
+      <div class="meal-list" id="group-foods-${CSS.escape(name)}"></div>
+      <button class="add-food-btn" data-group-target="${name}" style="margin-top:4px">+ 新增餐點</button>`;
+    container.appendChild(card);
+
+    // 填入該群組的餐點 chips
+    const mealList = card.querySelector(`#group-foods-${CSS.escape(name)}`);
+    foods.forEach(f => addGroupChip(mealList, name, f));
+
+    // 改名：點 ✏️ 或輸入框 blur 後確認
+    const input = card.querySelector('.group-name-input');
+    const renameBtn = card.querySelector('.group-rename-btn');
+
+    function doRename() {
+      const newName = input.value.trim();
+      const original = input.dataset.original;
+      if (!newName || newName === original) { input.value = original; return; }
+      if (state.groups[newName]) { showToast('⚠️ 群組名稱已存在'); input.value = original; return; }
+      // 更新 state.groups key
+      const foods = state.groups[original];
+      delete state.groups[original];
+      state.groups[newName] = foods;
+      autoSaveGroups();
+      renderGroups();
+    }
+
+    renameBtn.addEventListener('click', doRename);
+    input.addEventListener('blur', doRename);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+
+    // 刪除整個群組
+    card.querySelector('.group-delete-btn').addEventListener('click', () => {
+      if (!confirm(`確定刪除群組「${name}」？`)) return;
+      delete state.groups[name];
+      autoSaveGroups();
+      renderGroups();
+    });
+  });
+}
+
+function addGroupChip(container, groupName, text) {
+  const chip = document.createElement('div');
+  chip.className = 'meal-chip';
+  chip.innerHTML = `<span>${text}</span><button class="remove-chip" aria-label="移除">×</button>`;
+  chip.querySelector('.remove-chip').addEventListener('click', () => {
+    chip.remove();
+    // 從 state.groups 移除這個餐點
+    if (state.groups[groupName]) {
+      state.groups[groupName] = state.groups[groupName].filter(f => f !== text);
+      autoSaveGroups();
+    }
+  });
+  container.appendChild(chip);
+}
+
+function renderGroupSelect() {
+  const sel = document.getElementById('random-group-select');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">預設</option>';
+  Object.keys(state.groups).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  // 保留原本選的
+  if (current && state.groups[current]) sel.value = current;
+}
+
 // ─── Random Pick ──────────────────────────────────────────────
 function randomPick() {
-  const today    = new Date();
-  const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
+  const today      = new Date();
+  const todayStr   = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
   const isExercise = !!(state.records[todayStr] || {}).exercise;
-  const foods    = getFoodsForDay(today.getDay(), isExercise);
-  if (!foods.length) { showToast('⚠️ 請先在設定中新增餐點！'); return; }
+  const groupSel   = document.getElementById('random-group-select');
+  const groupName  = groupSel ? groupSel.value : '';
+
+  let foods;
+  if (groupName && state.groups[groupName] && state.groups[groupName].length > 0) {
+    // 指定群組模式：只從該群組選
+    foods = state.groups[groupName];
+  } else {
+    // 預設模式：照原本邏輯，從當天可選清單選
+    foods = getFoodsForDay(today.getDay(), isExercise);
+  }
+
+  if (!foods.length) { showToast('⚠️ 沒有可選餐點！'); return; }
   document.getElementById('random-food-name').textContent = foods[Math.floor(Math.random() * foods.length)];
   document.getElementById('random-result').classList.remove('hidden');
 }
@@ -498,6 +605,16 @@ function autoSaveSettings() {
   fbPushSettings(); // 背景推送（靜默）
 }
 
+function autoSaveGroups() {
+  lsSave('groups', state.groups);
+  // 背景推送 groups 至 Firebase
+  if (hasFbCfg()) {
+    fbFetch('groups', 'PUT', state.groups).catch(e => console.warn('[fbPushGroups]', e));
+  }
+  // 更新隨機選餐下拉選單
+  renderGroupSelect();
+}
+
 function saveSettings() {
   autoSaveSettings();
   showToast('✅ 設定已儲存！');
@@ -557,6 +674,15 @@ function exportExcel() {
   const wsStat = XLSX.utils.aoa_to_sheet([statHeaders,...statRows]);
   wsStat['!cols'] = [12,10,10,10,10,12].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, wsStat, '月份統計');
+
+  // Sheet 5: 群組設定
+  const grpRows = [['群組名稱','餐點']];
+  Object.entries(state.groups).forEach(([name, foods]) => {
+    foods.forEach(f => grpRows.push([name, f]));
+  });
+  const wsGrp = XLSX.utils.aoa_to_sheet(grpRows);
+  wsGrp['!cols'] = [16,22].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, wsGrp, '群組設定');
 
   const now = new Date();
   XLSX.writeFile(wb, `eatwhat_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`);
@@ -620,6 +746,18 @@ function handleImport(file) {
         });
       }
 
+      // 群組設定
+      parsed.groups = {};
+      if (wb.SheetNames.includes('群組設定')) {
+        XLSX.utils.sheet_to_json(wb.Sheets['群組設定'], { header:1 }).slice(1).forEach(row => {
+          const name = String(row[0]||'').trim();
+          const food = String(row[1]||'').trim();
+          if (!name || !food) return;
+          if (!parsed.groups[name]) parsed.groups[name] = [];
+          if (!parsed.groups[name].includes(food)) parsed.groups[name].push(food);
+        });
+      }
+
       state.importBuffer = parsed;
       showImportPreview(parsed);
     } catch (err) {
@@ -658,13 +796,17 @@ function applyImport() {
   if (!state.importBuffer) return;
   state.records  = state.importBuffer.records;
   state.settings = state.importBuffer.settings;
+  if (state.importBuffer.groups) state.groups = state.importBuffer.groups;
   state.importBuffer = null;
   lsSave('records',  state.records);
   lsSave('settings', state.settings);
+  lsSave('groups',   state.groups);
   document.getElementById('import-preview').classList.add('hidden');
   document.getElementById('import-excel').value = '';
   renderCalendar();
   renderSettings();
+  renderGroups();
+  renderGroupSelect();
   showToast('✅ 匯入成功！');
 }
 
@@ -865,7 +1007,37 @@ function diceForMeal(mealType) {
   const isExercise = document.getElementById('modal-exercise').checked;
   const foods = getFoodsForDay(dow, isExercise);
   if (!foods.length) { showToast('⚠️ 沒有可選餐點！'); return; }
-  const pick = foods[Math.floor(Math.random() * foods.length)];
+
+  // 收集需要排除的餐點：
+  // 1. 當天另一餐（午晚不重複）
+  // 2. 前一天的午餐和晚餐
+  // 3. 後一天的午餐和晚餐
+  const excluded = new Set();
+
+  const otherMeal = mealType === 'lunch' ? 'dinner' : 'lunch';
+  const otherVal = document.getElementById(`modal-${otherMeal}`)?.value?.trim();
+  if (otherVal) excluded.add(otherVal);
+
+  const dateObj = new Date(y, m-1, d);
+  [-1, 1].forEach(offset => {
+    const adj = new Date(dateObj);
+    adj.setDate(adj.getDate() + offset);
+    const adjStr = formatDate(adj.getFullYear(), adj.getMonth(), adj.getDate());
+    const adjRec = state.records[adjStr];
+    if (adjRec) {
+      if (adjRec.lunch)  excluded.add(adjRec.lunch);
+      if (adjRec.dinner) excluded.add(adjRec.dinner);
+    }
+  });
+
+  // 優先從排除名單以外選；若全部都在排除名單則放寬限制隨機選
+  const available = foods.filter(f => !excluded.has(f));
+  const pool = available.length > 0 ? available : foods;
+
+  if (pool.length === 0) { showToast('⚠️ 沒有可選餐點！'); return; }
+  if (available.length === 0) showToast('⚠️ 餐點太少，無法完全避免重複');
+
+  const pick = pool[Math.floor(Math.random() * pool.length)];
   const inp = document.getElementById(`modal-${mealType}`);
   if (inp) inp.value = pick;
 }
@@ -924,9 +1096,10 @@ function bindEvents() {
     btn.addEventListener('click', () => diceForMeal(btn.dataset.meal));
   });
 
-  // Add food (delegated)
+  // Add food (delegated)，排除群組內的新增餐點按鈕
   document.addEventListener('click', e => {
-    if (e.target.classList.contains('add-food-btn')) openAddFood(e.target.dataset.target);
+    if (e.target.classList.contains('add-food-btn') && !e.target.dataset.groupTarget)
+      openAddFood(e.target.dataset.target);
   });
 
   // Add food modal
@@ -952,6 +1125,32 @@ function bindEvents() {
   });
   document.getElementById('import-confirm').addEventListener('click', applyImport);
   document.getElementById('import-cancel').addEventListener('click', cancelImport);
+
+  // 新增群組按鈕
+  document.getElementById('add-group-btn')?.addEventListener('click', () => {
+    const name = prompt('請輸入群組名稱（例如：清淡組、外食組）');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (state.groups[trimmed]) { showToast('⚠️ 群組名稱已存在'); return; }
+    state.groups[trimmed] = [];
+    autoSaveGroups();
+    renderGroups();
+  });
+
+  // 群組新增餐點（delegated）
+  document.getElementById('group-list')?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-group-target]');
+    if (!btn) return;
+    const groupName = btn.dataset.groupTarget;
+    const food = prompt(`新增餐點到「${groupName}」`);
+    if (!food || !food.trim()) return;
+    const trimmed = food.trim();
+    if (!state.groups[groupName]) state.groups[groupName] = [];
+    if (state.groups[groupName].includes(trimmed)) { showToast('⚠️ 餐點已存在'); return; }
+    state.groups[groupName].push(trimmed);
+    autoSaveGroups();
+    renderGroups();
+  });
 
   // Esc
   document.addEventListener('keydown', e => {

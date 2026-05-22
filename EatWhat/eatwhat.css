@@ -103,7 +103,7 @@ a:hover { text-decoration: underline; }
 }
 .today-btn:hover { border-color: var(--ochre); color: var(--ochre); }
 .random-btn {
-  margin-left: auto;
+  margin-left: 0;
   background: linear-gradient(135deg, var(--terracotta), var(--terracotta-light));
   color: #fff; border: none;
   padding: 8px 18px; border-radius: 99px;
@@ -528,6 +528,47 @@ input:checked + .slider:before { transform: translateX(20px); }
 .calc-zero { grid-column: span 2; }
 .calc-ok { background: #1a73e8; color: #fff; grid-column: span 2; }
 .calc-ok:hover { background: #4da6ff; }
+
+
+/* ── Group Settings ── */
+.group-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.group-card {
+  background: var(--warm-white); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.group-card-header {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 10px;
+}
+.group-name-icon { font-size: 1rem; flex-shrink: 0; }
+.group-name-input {
+  flex: 1; font-family: var(--font); font-size: 0.92rem; font-weight: 700;
+  color: var(--ink); border: 1.5px solid transparent;
+  border-radius: var(--radius-sm); padding: 3px 7px;
+  background: transparent; transition: border-color 0.15s, background 0.15s;
+}
+.group-name-input:hover { border-color: var(--border); background: var(--cream); }
+.group-name-input:focus { outline: none; border-color: var(--terracotta); background: var(--cream); }
+.group-rename-btn, .group-delete-btn {
+  background: none; border: none; cursor: pointer; font-size: 0.85rem;
+  color: var(--ink-light); padding: 2px 4px; border-radius: 4px;
+  transition: color 0.15s; flex-shrink: 0;
+}
+.group-rename-btn:hover { color: var(--terracotta); }
+.group-delete-btn:hover { color: #c44; }
+
+/* ── Random group select ── */
+.random-group {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+}
+.random-group-select {
+  padding: 7px 12px; border-radius: 99px;
+  border: 2px solid var(--terracotta-light);
+  font-family: var(--font); font-size: 0.85rem; font-weight: 600;
+  background: var(--warm-white); color: var(--ink); cursor: pointer;
+  max-width: 120px;
+}
+.random-group-select:focus { outline: none; border-color: var(--terracotta); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {

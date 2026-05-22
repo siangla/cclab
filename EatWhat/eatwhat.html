@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>今天吃什麼?</title>
+  <title>今天吃什麼?~</title>
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
@@ -13,7 +13,7 @@
   <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="今天吃什麼" />
+  <meta name="apple-mobile-web-app-title" content="今天吃什麼?" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 
   <!-- Open Graph -->
@@ -53,7 +53,12 @@
       <h2 id="month-label">2024年1月</h2>
       <button id="next-month" class="arrow-btn">›</button>
       <button id="today-btn" class="today-btn">今天</button>
-      <button id="random-btn" class="random-btn">🎲 隨機選餐</button>
+      <div class="random-group">
+        <select id="random-group-select" class="random-group-select">
+          <option value="">預設</option>
+        </select>
+        <button id="random-btn" class="random-btn">🎲 隨機選餐</button>
+      </div>
     </div>
 
     <div class="month-stats" id="month-stats">
@@ -107,6 +112,13 @@
         <h3 class="sub-title">➕ 特定星期加菜</h3>
         <p class="section-desc">為特定星期增加額外餐點選項，與基本清單合併後供選擇。留空則只用基本清單。</p>
         <div class="day-overrides" id="day-overrides"></div>
+      </div>
+
+      <div class="settings-per-day" style="margin-top:28px">
+        <h3 class="sub-title">🗂️ 群組設定</h3>
+        <p class="section-desc">建立餐點群組，群組名稱可加入餐點清單或特定星期加菜中當作一個選項。隨機選餐時可指定只從某個群組選。</p>
+        <div id="group-list" class="group-list"></div>
+        <button class="add-food-btn" id="add-group-btn" style="margin-top:8px">+ 新增群組</button>
       </div>
 
       <p class="autosave-hint">✦ 新增或刪除餐點時會自動儲存</p>
@@ -226,7 +238,7 @@
         <div class="fb-action-row">
           <button class="fb-pull-btn" id="fb-pull-btn">📥 拉取 Firebase 資料</button>
           <div class="fb-push-group">
-            <button class="fb-push-btn" id="fb-push-btn">📤 推送全部資料</button>
+            <button class="fb-push-btn" id="fb-push-btn">📤 全量強制同步</button>
             <label class="fb-push-confirm-label">
               <input type="checkbox" id="fb-push-confirm" />
               確認推送（將覆蓋 Firebase 上的資料）
