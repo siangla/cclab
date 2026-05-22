@@ -111,33 +111,83 @@ async function fbFetch(path, method = 'GET', body = null) {
   return res.json();
 }
 
+// ─── Firebase 單筆推送 helpers ───────────────────────────────
+// 有 Firebase config 才推，沒有就只存本機，不阻擋 UI
+function hasFbCfg() {
+  return !!(state.firebaseCfg.url && state.firebaseCfg.url.startsWith('http'));
+}
+
+// 推送單筆記錄（儲存/刪除某天時呼叫）
+async function fbPushRecord(dateStr, recData) {
+  if (!hasFbCfg()) return;
+  try {
+    const base = fbBaseUrl();
+    const seg  = state.firebaseCfg.key || 'default';
+    const url  = `${state.firebaseCfg.url.replace(/\/$/, '')}/${seg}/records/${dateStr}.json`;
+    const method = recData ? 'PUT' : 'DELETE';
+    const opts = { method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' };
+    if (recData) opts.body = JSON.stringify(recData);
+    await fetch(url, opts);
+    updateSyncStatus('record', dateStr);
+  } catch (e) {
+    console.warn('[fbPushRecord] 推送失敗', e);
+    // 靜默失敗，不打擾使用者，本機已儲存
+  }
+}
+
+// 推送整包 settings（設定修改後呼叫）
+async function fbPushSettings() {
+  if (!hasFbCfg()) return;
+  try {
+    await fbFetch('settings', 'PUT', state.settings);
+    updateSyncStatus('settings');
+  } catch (e) {
+    console.warn('[fbPushSettings] 設定推送失敗', e);
+  }
+}
+
+// 更新共用頁同步狀態文字
+function updateSyncStatus(type, dateStr) {
+  const time = new Date().toLocaleTimeString();
+  const msg  = type === 'record'
+    ? `✅ 已同步：${dateStr} 的記錄（${time}）`
+    : `✅ 設定已同步至 Firebase（${time}）`;
+  // 只有在共用頁面時才更新狀態，不影響其他頁面
+  const el = document.getElementById('firebase-status');
+  if (el && el.className.includes('ok') || el && el.className.includes('info')) {
+    setShareStatus('ok', msg);
+  }
+}
+
 // ─── Init ─────────────────────────────────────────────────────
+function applySettings(rawSett) {
+  if (!rawSett || typeof rawSett !== 'object' || !rawSett.foods) return false;
+  if ('weekday-exercise' in rawSett.foods || 'weekend-exercise' in rawSett.foods) {
+    rawSett = migrateLegacySettings(rawSett);
+  }
+  if (!Array.isArray(rawSett.foods['exercise'])) rawSett.foods['exercise'] = [];
+  if (!Array.isArray(rawSett.foods['normal']))   rawSett.foods['normal']   = [];
+  if (!rawSett.dayOverride || typeof rawSett.dayOverride !== 'object') rawSett.dayOverride = {};
+  state.settings = rawSett;
+  return true;
+}
+
+function applyRecords(recs) {
+  if (!recs || typeof recs !== 'object' || Array.isArray(recs)) return false;
+  state.records = recs;
+  return true;
+}
+
 function init() {
-  // 讀取 Firebase config（只記憶 URL 和 key，不自動連線）
+  // 讀取 Firebase config
   try {
     const fbRaw = localStorage.getItem('mealplan_firebase_cfg');
     if (fbRaw) state.firebaseCfg = JSON.parse(fbRaw);
   } catch (e) { /* 損壞的 config 就忽略 */ }
 
-  // 從本機讀取資料，並嚴格驗證結構
-  let rawSett = lsLoad('settings');   // let，因為可能要 migrate
-  const recs = lsLoad('records');
-
-  // settings 必須是有 foods 物件的 object
-  if (rawSett && typeof rawSett === 'object' && rawSett.foods && typeof rawSett.foods === 'object') {
-    // 相容舊格式（weekday-exercise 等 4 個 key）→ 自動合併到新格式
-    if ('weekday-exercise' in rawSett.foods || 'weekend-exercise' in rawSett.foods) {
-      rawSett = migrateLegacySettings(rawSett);
-    }
-    if (!Array.isArray(rawSett.foods['exercise'])) rawSett.foods['exercise'] = [];
-    if (!Array.isArray(rawSett.foods['normal']))   rawSett.foods['normal']   = [];
-    if (!rawSett.dayOverride || typeof rawSett.dayOverride !== 'object') rawSett.dayOverride = {};
-    state.settings = rawSett;
-  }
-  // records 必須是 object（key 為日期字串）
-  if (recs && typeof recs === 'object' && !Array.isArray(recs)) {
-    state.records = recs;
-  }
+  // 先從本機載入（同步，確保 UI 立即可用）
+  applySettings(lsLoad('settings'));
+  applyRecords(lsLoad('records'));
 
   updateSharePageUI();
   setupDayOverrides();
@@ -145,7 +195,39 @@ function init() {
   try { renderCalendar(); } catch (e) { console.error('renderCalendar error', e); }
   try { renderSettings(); } catch (e) { console.error('renderSettings error', e); }
 
-  bindEvents(); // 一定要執行到，否則頁面整個死掉
+  bindEvents(); // 一定要執行到
+
+  // 若有 Firebase config，背景自動拉取一次最新資料
+  if (hasFbCfg()) {
+    setShareStatus('loading', '⏳ 正在從 Firebase 拉取最新資料…');
+    fbAutoSync();
+  }
+}
+
+// 啟動時背景自動拉取（不阻擋 UI）
+async function fbAutoSync() {
+  try {
+    const [rawSett, rawRecs] = await Promise.all([
+      fbFetch('settings'),
+      fbFetch('records'),
+    ]);
+    const validSett = rawSett && typeof rawSett === 'object' && rawSett.foods ? rawSett : null;
+    const validRecs = rawRecs && typeof rawRecs === 'object' && !Array.isArray(rawRecs) ? rawRecs : null;
+
+    let changed = false;
+    if (validSett && applySettings(validSett)) { lsSave('settings', state.settings); changed = true; }
+    if (validRecs && applyRecords(validRecs))  { lsSave('records',  state.records);  changed = true; }
+
+    if (changed) {
+      renderCalendar();
+      renderSettings();
+    }
+    const time = new Date().toLocaleTimeString();
+    setShareStatus('ok', `✅ 已連線 Firebase，自動同步完成（${time}）`);
+  } catch (e) {
+    console.warn('[fbAutoSync] 自動拉取失敗', e);
+    setShareStatus('info', `📋 已記憶 Firebase 設定，但自動拉取失敗（離線模式）`);
+  }
 }
 
 // ─── Calendar ─────────────────────────────────────────────────
@@ -303,8 +385,9 @@ function getFoodsForDay(dow, isExercise) {
 
 function saveModal() {
   if (!state.modalDate) return;
+  const dateStr = state.modalDate; // 先存，closeModal 會清掉 state.modalDate
   const exEl = document.getElementById('modal-exercise');
-  state.records[state.modalDate] = {
+  const rec = {
     exercise: exEl.checked,
     lunch:    document.getElementById('modal-lunch').value.trim(),
     dinner:   document.getElementById('modal-dinner').value.trim(),
@@ -312,19 +395,23 @@ function saveModal() {
     note:     document.getElementById('modal-note').value.trim(),
     status:   state.modalStatus,
   };
-  lsSave('records', state.records);   // 只寫本機，立即完成
+  state.records[dateStr] = rec;
+  lsSave('records', state.records);
   renderCalendar();
   closeModal();
   showToast('✅ 儲存成功！');
+  fbPushRecord(dateStr, rec); // 背景推送單筆（靜默）
 }
 
 function deleteModal() {
   if (!state.modalDate) return;
-  delete state.records[state.modalDate];
+  const dateStr = state.modalDate;
+  delete state.records[dateStr];
   lsSave('records', state.records);
   renderCalendar();
   closeModal();
   showToast('🗑️ 已清除');
+  fbPushRecord(dateStr, null); // null = DELETE
 }
 
 // ─── Random Pick ──────────────────────────────────────────────
@@ -408,6 +495,7 @@ function setupDayOverrides() {
 function autoSaveSettings() {
   collectSettingsFromDOM();
   lsSave('settings', state.settings);
+  fbPushSettings(); // 背景推送（靜默）
 }
 
 function saveSettings() {
@@ -607,22 +695,8 @@ async function fbPull() {
     const validSett = rawSett && typeof rawSett === 'object' && rawSett.foods ? rawSett : null;
     const validRecs = rawRecs && typeof rawRecs === 'object' && !Array.isArray(rawRecs) ? rawRecs : null;
 
-    if (validSett) {
-      // 相容舊格式 → migrate
-      let settToSave = validSett;
-      if ('weekday-exercise' in settToSave.foods || 'weekend-exercise' in settToSave.foods) {
-        settToSave = migrateLegacySettings(settToSave);
-      }
-      if (!Array.isArray(settToSave.foods['exercise'])) settToSave.foods['exercise'] = [];
-      if (!Array.isArray(settToSave.foods['normal']))   settToSave.foods['normal']   = [];
-      if (!settToSave.dayOverride || typeof settToSave.dayOverride !== 'object') settToSave.dayOverride = {};
-      state.settings = settToSave;
-      lsSave('settings', settToSave);
-    }
-    if (validRecs) {
-      state.records = validRecs;
-      lsSave('records', validRecs);
-    }
+    if (validSett && applySettings(validSett)) lsSave('settings', state.settings);
+    if (validRecs && applyRecords(validRecs))  lsSave('records',  state.records);
 
     // 儲存 config
     localStorage.setItem('mealplan_firebase_cfg', JSON.stringify(state.firebaseCfg));
@@ -683,7 +757,7 @@ async function fbPush() {
     lsSave('records',  state.records);
     localStorage.setItem('mealplan_firebase_cfg', JSON.stringify(state.firebaseCfg));
 
-    setShareStatus('ok', `✅ 推送成功！共 ${recCount} 筆記錄、${foodCount} 項餐點設定。（${new Date().toLocaleTimeString()}）`);
+    setShareStatus('ok', `✅ 全量推送成功！共 ${recCount} 筆記錄、${foodCount} 項餐點設定。（${new Date().toLocaleTimeString()}）`);
     showToast('☁️ 資料已推送至 Firebase！');
   } catch (err) {
     setShareStatus('err', `❌ 推送失敗：${err.message}　請確認 URL 與資料庫規則。`);

@@ -170,8 +170,8 @@
         <div class="how-card how-card-push">
           <div class="how-num">③</div>
           <div>
-            <p class="how-title">📤 推送（將本機資料上傳）</p>
-            <p>編輯完成後推送，對方拉取即可看到最新內容。</p>
+            <p class="how-title">📤 自動同步</p>
+            <p>每次儲存或刪除記錄時，自動推送該筆資料至 Firebase。設定修改也會自動同步。</p>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@
         <div class="fb-action-row">
           <button class="fb-pull-btn" id="fb-pull-btn">📥 拉取 Firebase 資料</button>
           <div class="fb-push-group">
-            <button class="fb-push-btn" id="fb-push-btn">📤 推送至 Firebase</button>
+            <button class="fb-push-btn" id="fb-push-btn">📤 全量強制同步</button>
             <label class="fb-push-confirm-label">
               <input type="checkbox" id="fb-push-confirm" />
               確認推送（將覆蓋 Firebase 上的資料）
