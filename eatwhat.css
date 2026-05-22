@@ -155,6 +155,7 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-sm); padding: 8px;
   min-height: 92px; cursor: pointer;
   transition: all 0.15s ease; position: relative; overflow: hidden;
+  /* overflow hidden 保留，::after 圓點設在 padding 範圍內不會被裁 */
 }
 .cal-day:hover { border-color: var(--terracotta); box-shadow: 0 4px 16px var(--shadow-md); transform: translateY(-1px); }
 .cal-day.empty { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
@@ -163,18 +164,31 @@ a:hover { text-decoration: underline; }
 .cal-day.is-sunday .day-num { color: #c44; }
 .cal-day.is-saturday .day-num { color: #44a; }
 .day-num { font-size: 1rem; font-weight: 800; line-height: 1; }
-.day-exercise-badge {
-  position: absolute; top: 5px; right: 5px;
-  font-size: 0.65rem; background: var(--forest-pale);
-  color: var(--forest); border-radius: 99px; padding: 1px 5px; font-weight: 700;
+.day-exercise-badge { display: none; } /* 不再使用，改用 has-exercise */
+.has-exercise::after {
+  content: '';
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--forest-light); border-radius: 50%;
 }
 .day-meals { margin-top: 5px; display: flex; flex-direction: column; gap: 3px; }
 .day-meal-tag {
-  font-size: 0.7rem; padding: 2px 6px; border-radius: 99px;
-  font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 0.7rem; padding: 1px 0 1px 6px;
+  font-weight: 600; word-break: keep-all; line-height: 1.5;
+  border-left: 2.5px solid transparent;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--ink-mid);
 }
-.day-meal-tag.actual { background: var(--terracotta-pale); color: var(--terracotta); }
-.day-meal-tag.planned { background: var(--forest-pale); color: var(--forest); }
+/* actual（已吃）：磚紅實線＋淡底色 */
+.day-meal-tag.actual {
+  border-left-color: var(--terracotta); color: var(--ink);
+  background: var(--terracotta-pale);
+}
+/* planned（預計）：森林綠實線＋淡底色 */
+.day-meal-tag.planned {
+  border-left-color: var(--forest-light); color: var(--ink-mid);
+  background: var(--forest-pale);
+}
 .day-cost { font-size: 0.68rem; color: var(--ink-light); margin-top: 3px; font-weight: 600; }
 
 /* ── Legend ── */
@@ -184,9 +198,12 @@ a:hover { text-decoration: underline; }
 .dot-exercise { background: var(--forest-light); }
 .dot-meal { background: var(--terracotta); }
 .dot-planned { background: var(--forest); }
+.legend-line { display: inline-block; width: 18px; height: 0; border-top: 2.5px solid; }
+.legend-actual  { border-color: var(--terracotta); }
+.legend-planned { border-color: var(--forest-light); }
 
 /* ── Settings ── */
-.settings-container { max-width: 760px; }
+.settings-container { width: 100%; }
 .section-title { font-size: 1.5rem; margin-bottom: 6px; }
 .section-desc { color: var(--ink-light); font-size: 0.9rem; margin-bottom: 22px; }
 .sub-title { font-size: 1.05rem; margin-bottom: 6px; margin-top: 28px; }
@@ -260,9 +277,6 @@ a:hover { text-decoration: underline; }
 .danger-btn:hover { background: #fde8e8; border-color: #c44; }
 
 /* Firebase pull/push buttons */
-.fb-action-row {
-  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;
-}
 .fb-pull-btn {
   background: linear-gradient(135deg, #1a73e8, #4da6ff);
   color: #fff; border: none; padding: 10px 20px; border-radius: 99px;
@@ -281,7 +295,7 @@ a:hover { text-decoration: underline; }
 .fb-push-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
 /* ── Excel Page ── */
-.excel-container { max-width: 800px; }
+.excel-container { width: 100%; }
 .excel-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
 .excel-card {
   background: var(--warm-white); border: 1.5px solid var(--border);
@@ -346,7 +360,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ── Share ── */
-.share-container { max-width: 680px; }
+.share-container { width: 100%; }
 .share-steps { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
 .step {
   display: flex; gap: 12px; align-items: flex-start;
@@ -383,14 +397,16 @@ code { background: var(--ochre-pale); color: var(--ink); padding: 1px 6px; borde
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(30,26,22,0.55); backdrop-filter: blur(4px);
-  z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px;
+  z-index: 500; display: flex; align-items: flex-start; justify-content: center;
+  padding: 16px; overflow-y: auto;
 }
 .modal-overlay.hidden { display: none; }
 .modal {
   background: var(--warm-white); border-radius: var(--radius);
   width: 100%; max-width: 480px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-  animation: modalIn 0.22s ease; overflow: hidden;
+  animation: modalIn 0.22s ease; overflow: visible;
+  margin: auto;
 }
 .modal-sm { max-width: 360px; }
 
@@ -460,6 +476,56 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .suggest-chip:hover { background: var(--terracotta-pale); border-color: var(--terracotta); color: var(--terracotta); }
 
+
+
+/* ── Firebase push confirm ── */
+.fb-action-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px;
+}
+.fb-push-group {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.fb-push-confirm-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; font-weight: 600; color: var(--ink-mid); cursor: pointer;
+  white-space: nowrap;
+}
+.fb-push-confirm-label input[type="checkbox"] {
+  width: 15px; height: 15px; cursor: pointer; accent-color: #c44; flex-shrink: 0;
+}
+
+/* ── Calculator ── */
+.calc-panel {
+  background: var(--ink); border-radius: var(--radius-sm);
+  padding: 10px; margin-top: 6px; border-radius: 10px;
+}
+.calc-panel.hidden { display: none; }
+.calc-display {
+  background: #111; color: #fff; font-size: 1.25rem; font-weight: 700;
+  text-align: right; padding: 8px 12px; border-radius: 6px;
+  margin-bottom: 8px; min-height: 40px; word-break: break-all;
+  font-family: var(--font);
+}
+.calc-btns {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+}
+.calc-btn {
+  background: #3a3a3a; color: #fff; border: none;
+  border-radius: 6px; padding: 11px 4px; font-size: 0.95rem;
+  font-family: var(--font); font-weight: 600; cursor: pointer;
+  transition: background 0.12s; touch-action: manipulation;
+}
+.calc-btn:hover, .calc-btn:active { background: #555; }
+.calc-op { background: #5a3a28; color: #f5c4a0; }
+.calc-op:hover { background: var(--terracotta); color: #fff; }
+.calc-clear { background: #5a2a2a; color: #ffaaaa; }
+.calc-clear:hover { background: #c44; color: #fff; }
+.calc-eq { background: var(--forest); color: #fff; }
+.calc-eq:hover { background: var(--forest-light); }
+.calc-zero { grid-column: span 2; }
+.calc-ok { background: #1a73e8; color: #fff; grid-column: span 2; }
+.calc-ok:hover { background: #4da6ff; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .excel-cards { grid-template-columns: 1fr; }
@@ -482,55 +548,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 @media (max-width: 480px) {
   .cal-header { font-size: 0.7rem; }
-  .cal-day { min-height: 52px; }
+  .cal-day { min-height: 72px; padding: 4px; }
   .day-exercise-badge { display: none; }
   .month-stats { font-size: 0.8rem; }
+  .day-meal-tag { font-size: 0.62rem; padding: 2px 5px; }
+  .day-num { font-size: 0.82rem; }
 }
-
-/*checkbox 樣式*/
-.fb-confirm-row {
-  margin-top: 14px; margin-bottom: 6px;
-}
-.fb-confirm-label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.88rem; font-weight: 600; color: #c44; cursor: pointer;
-}
-.fb-confirm-label input[type="checkbox"] {
-  width: 16px; height: 16px; cursor: pointer; accent-color: #c44;
-}
-
-
-/*計算機樣式*/
-.calc-panel {
-  background: var(--ink); border-radius: var(--radius-sm);
-  padding: 10px; margin-top: 4px;
-}
-.calc-panel.hidden { display: none; }
-.calc-display {
-  background: #111; color: #fff; font-size: 1.3rem; font-weight: 700;
-  text-align: right; padding: 8px 12px; border-radius: var(--radius-sm);
-  margin-bottom: 8px; min-height: 42px; word-break: break-all;
-  font-family: var(--font);
-}
-.calc-btns {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
-}
-.calc-btn {
-  background: #3a3a3a; color: #fff; border: none;
-  border-radius: 6px; padding: 10px 4px; font-size: 0.95rem;
-  font-family: var(--font); font-weight: 600; cursor: pointer;
-  transition: background 0.12s;
-}
-.calc-btn:hover { background: #555; }
-.calc-op { background: #c4623a; }
-.calc-op:hover { background: #e8856b; }
-.calc-op-plus { grid-row: span 2; }
-.calc-eq { background: #3a6645; grid-row: span 2; }
-.calc-eq:hover { background: #5a8c69; }
-.calc-zero { grid-column: span 2; }
-.calc-clear { background: #8a3a2a; }
-.calc-clear:hover { background: #b04a36; }
-.calc-ok {
-  background: #1a73e8; grid-column: span 2;
-}
-.calc-ok:hover { background: #4da6ff; }

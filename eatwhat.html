@@ -61,8 +61,8 @@
 
     <div class="legend">
       <span class="legend-item"><span class="dot dot-exercise"></span>運動日</span>
-      <span class="legend-item"><span class="dot dot-meal"></span>已記錄餐點</span>
-      <span class="legend-item"><span class="dot dot-planned"></span>預計餐點</span>
+      <span class="legend-item"><span class="legend-line legend-actual"></span>已吃</span>
+      <span class="legend-item"><span class="legend-line legend-planned"></span>預計</span>
     </div>
   </section>
 
@@ -207,13 +207,15 @@
         <input type="text" id="firebase-key" placeholder="例如：myfamily2024" />
         <div class="fb-action-row">
           <button class="fb-pull-btn" id="fb-pull-btn">📥 拉取 Firebase 資料</button>
-          <button class="fb-push-btn" id="fb-push-btn">📤 推送至 Firebase</button>
-          <div class="fb-confirm-row">
-            <label class="fb-confirm-label">
+          <div class="fb-push-group">
+            <button class="fb-push-btn" id="fb-push-btn">📤 推送至 Firebase</button>
+            <label class="fb-push-confirm-label">
               <input type="checkbox" id="fb-push-confirm" />
               確認推送（將覆蓋 Firebase 上的資料）
             </label>
           </div>
+        </div>
+        <div style="margin-top:8px">
           <button class="secondary-btn" id="fb-clear-btn">🗑️ 清除設定</button>
         </div>
       </div>
@@ -242,46 +244,47 @@
       <div class="modal-field">
         <label>🍳 早午餐</label>
         <div class="input-row">
-          <input type="text" id="modal-lunch" placeholder="輸入或從下方選擇" />
+          <input type="text" id="modal-lunch" list="lunch-list" placeholder="選擇或輸入" autocomplete="off" />
+          <datalist id="lunch-list"></datalist>
           <button class="dice-btn" data-meal="lunch">🎲</button>
         </div>
       </div>
       <div class="modal-field">
         <label>🌙 晚餐</label>
         <div class="input-row">
-          <input type="text" id="modal-dinner" placeholder="輸入或從下方選擇" />
+          <input type="text" id="modal-dinner" list="dinner-list" placeholder="選擇或輸入" autocomplete="off" />
+          <datalist id="dinner-list"></datalist>
           <button class="dice-btn" data-meal="dinner">🎲</button>
         </div>
       </div>
       <div class="modal-field">
         <label>💰 花費（元）</label>
         <div class="input-row">
-          <input type="number" id="modal-cost" placeholder="0" min="0" />
+          <input type="number" id="modal-cost" placeholder="0" min="0" style="flex:1" />
           <button class="dice-btn" id="calc-btn" type="button">🧮</button>
         </div>
-      </div>
-      <!-- 計算機面板，放在花費欄位下方 -->
-      <div id="calc-panel" class="calc-panel hidden">
-        <div class="calc-display" id="calc-display">0</div>
-        <div class="calc-btns">
-          <button class="calc-btn calc-clear">C</button>
-          <button class="calc-btn calc-op">÷</button>
-          <button class="calc-btn calc-op">×</button>
-          <button class="calc-btn calc-op">−</button>
-          <button class="calc-btn">7</button>
-          <button class="calc-btn">8</button>
-          <button class="calc-btn">9</button>
-          <button class="calc-btn calc-op calc-op-plus">+</button>
-          <button class="calc-btn">4</button>
-          <button class="calc-btn">5</button>
-          <button class="calc-btn">6</button>
-          <button class="calc-btn calc-btn-wide calc-eq">=</button>
-          <button class="calc-btn">1</button>
-          <button class="calc-btn">2</button>
-          <button class="calc-btn">3</button>
-          <button class="calc-btn calc-btn-wide calc-zero">0</button>
-          <button class="calc-btn calc-dot">.</button>
-          <button class="calc-btn calc-ok">✓ 確認</button>
+        <div id="calc-panel" class="calc-panel hidden">
+          <div class="calc-display" id="calc-display">0</div>
+          <div class="calc-btns">
+            <button class="calc-btn calc-clear">C</button>
+            <button class="calc-btn calc-op">÷</button>
+            <button class="calc-btn calc-op">×</button>
+            <button class="calc-btn calc-op">−</button>
+            <button class="calc-btn">7</button>
+            <button class="calc-btn">8</button>
+            <button class="calc-btn">9</button>
+            <button class="calc-btn calc-op calc-plus">+</button>
+            <button class="calc-btn">4</button>
+            <button class="calc-btn">5</button>
+            <button class="calc-btn">6</button>
+            <button class="calc-btn calc-eq">=</button>
+            <button class="calc-btn">1</button>
+            <button class="calc-btn">2</button>
+            <button class="calc-btn">3</button>
+            <button class="calc-btn calc-zero">0</button>
+            <button class="calc-btn calc-dot">.</button>
+            <button class="calc-btn calc-ok">✓ 確認</button>
+          </div>
         </div>
       </div>
       <div class="modal-field">
@@ -291,14 +294,11 @@
       <div class="modal-field">
         <label>狀態</label>
         <div class="status-btns">
-          <button class="status-btn active" data-status="planned">預計</button>
-          <button class="status-btn" data-status="actual">已吃</button>
+          <button class="status-btn" data-status="planned">預計</button>
+          <button class="status-btn active" data-status="actual">已吃</button>
         </div>
       </div>
-      <div class="suggest-row">
-        <p class="suggest-label">推薦餐點：</p>
-        <div id="suggest-list" class="suggest-list"></div>
-      </div>
+
     </div>
     <div class="modal-footer">
       <button class="save-btn" id="modal-save">💾 儲存</button>

@@ -49,7 +49,7 @@ function migrateLegacySettings(old) {
 
 
 
-// ───  ────────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────
 let state = {
   year:  new Date().getFullYear(),
   month: new Date().getMonth(),
@@ -198,19 +198,22 @@ function renderCalendar() {
       if (rec.exercise) totalExercise++;
       if (rec.cost) totalCost += Number(rec.cost) || 0;
 
-      if (rec.exercise) {
-        const badge = document.createElement('div');
-        badge.className = 'day-exercise-badge'; badge.textContent = '🏃運動'; cell.appendChild(badge);
-      }
+      // 運動日：class 加上 has-exercise，CSS 顯示小圓點，不顯示文字和底色
+      if (rec.exercise) cell.classList.add('has-exercise');
+
+      // 餐點顯示：純文字，無圖示；狀態用 CSS 邊框區分（planned=虛線, actual=實線）
       const mealsEl = document.createElement('div'); mealsEl.className = 'day-meals';
-      const sc = rec.status || 'actual';
-      if (rec.lunch) {
-        const t = document.createElement('div'); t.className = `day-meal-tag ${sc}`;
-        t.textContent = `🍳 ${rec.lunch}`; mealsEl.appendChild(t);
-      }
-      if (rec.dinner) {
-        const t = document.createElement('div'); t.className = `day-meal-tag ${sc}`;
-        t.textContent = `🌙 ${rec.dinner}`; mealsEl.appendChild(t);
+      const sc = rec.status || 'planned';
+      if (rec.lunch && rec.dinner) {
+        // 兩餐都有 → 各一行
+        const tL = document.createElement('div');
+        tL.className = `day-meal-tag ${sc}`; tL.textContent = rec.lunch; mealsEl.appendChild(tL);
+        const tD = document.createElement('div');
+        tD.className = `day-meal-tag ${sc}`; tD.textContent = rec.dinner; mealsEl.appendChild(tD);
+      } else if (rec.lunch || rec.dinner) {
+        // 只有一餐 → 顯示那個
+        const t = document.createElement('div');
+        t.className = `day-meal-tag ${sc}`; t.textContent = rec.lunch || rec.dinner; mealsEl.appendChild(t);
       }
       cell.appendChild(mealsEl);
       if (rec.cost) {
@@ -249,13 +252,15 @@ function openModal(dateStr) {
   oldEx.parentNode.replaceChild(newEx, oldEx);
   newEx.addEventListener('change', () => renderSuggestions(dow, newEx.checked));
 
-  document.getElementById('modal-lunch').value  = rec.lunch  || '';
-  document.getElementById('modal-dinner').value = rec.dinner || '';
-  document.getElementById('modal-cost').value   = rec.cost   || '';
-  document.getElementById('modal-note').value   = rec.note   || '';
+  document.getElementById('modal-cost').value  = rec.cost  || '';
+  document.getElementById('modal-note').value  = rec.note  || '';
   state.modalStatus = rec.status || 'planned';
   updateStatusBtns();
+  // 先填充 select options，再設已儲存的值
+  // 順序不能對調：select 沒有 option 時設 value 無效
   renderSuggestions(dow, isExercise);
+  document.getElementById('modal-lunch').value  = rec.lunch  || '';
+  document.getElementById('modal-dinner').value = rec.dinner || '';
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
@@ -272,19 +277,16 @@ function updateStatusBtns() {
 
 function renderSuggestions(dow, isExercise) {
   const foods = getFoodsForDay(dow, isExercise);
-  const list  = document.getElementById('suggest-list');
-  list.innerHTML = '';
-  foods.forEach(f => {
-    const chip = document.createElement('button');
-    chip.className = 'suggest-chip'; chip.textContent = f;
-    chip.addEventListener('click', () => {
-      const lunch  = document.getElementById('modal-lunch');
-      const dinner = document.getElementById('modal-dinner');
-      if (!dinner.value) dinner.value = f;
-      else if (!lunch.value) lunch.value = f;
-      else dinner.value = f;
+  // 填充 datalist（input + datalist 同時支援下拉選擇和自由輸入）
+  [['modal-lunch','lunch-list'], ['modal-dinner','dinner-list']].forEach(([inputId, listId]) => {
+    const dl = document.getElementById(listId);
+    if (!dl) return;
+    dl.innerHTML = '';
+    foods.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f;
+      dl.appendChild(opt);
     });
-    list.appendChild(chip);
   });
 }
 
@@ -647,16 +649,17 @@ async function fbPull() {
 
 // ─── Firebase：手動推送 ───────────────────────────────────────
 async function fbPush() {
-  const confirmed = document.getElementById('fb-push-confirm');
-  if (!confirmed || !confirmed.checked) {
-    showToast('⚠️ 請先勾選確認再推送');
-    return;
-  }
-  confirmed.checked = false; // 推送後自動取消勾選
-
   const url = document.getElementById('firebase-url').value.trim();
   const key = document.getElementById('firebase-key').value.trim();
   if (!url) { showToast('⚠️ 請輸入 Firebase URL'); return; }
+
+  // 確認 checkbox
+  const confirmEl = document.getElementById('fb-push-confirm');
+  if (!confirmEl || !confirmEl.checked) {
+    showToast('⚠️ 請先勾選確認才能推送');
+    return;
+  }
+  confirmEl.checked = false; // 推送後自動取消勾選
 
   // 推送前先把畫面上的設定同步到 state，避免推送舊值
   collectSettingsFromDOM();
@@ -788,7 +791,9 @@ function diceForMeal(mealType) {
   const isExercise = document.getElementById('modal-exercise').checked;
   const foods = getFoodsForDay(dow, isExercise);
   if (!foods.length) { showToast('⚠️ 沒有可選餐點！'); return; }
-  document.getElementById(`modal-${mealType}`).value = foods[Math.floor(Math.random() * foods.length)];
+  const pick = foods[Math.floor(Math.random() * foods.length)];
+  const inp = document.getElementById(`modal-${mealType}`);
+  if (inp) inp.value = pick;
 }
 
 // ─── Toast ────────────────────────────────────────────────────
@@ -873,47 +878,70 @@ function bindEvents() {
   });
   document.getElementById('import-confirm').addEventListener('click', applyImport);
   document.getElementById('import-cancel').addEventListener('click', cancelImport);
-  
-  // 計算機
-  let calcExpr = '';
-  const calcDisplay = document.getElementById('calc-display');
-  const calcPanel   = document.getElementById('calc-panel');
 
-  document.getElementById('calc-btn').addEventListener('click', () => {
-    calcPanel.classList.toggle('hidden');
-    calcExpr = '';
-    calcDisplay.textContent = '0';
-  });
-
-  document.querySelectorAll('.calc-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const t = btn.textContent.trim();
-      if (t === 'C') {
-        calcExpr = ''; calcDisplay.textContent = '0';
-      } else if (t === '✓ 確認') {
-        const result = calcDisplay.textContent;
-        if (result !== 'ERROR') document.getElementById('modal-cost').value = result;
-        calcPanel.classList.add('hidden');
-      } else if (t === '=') {
-        try {
-          // 把顯示符號換回 JS 運算符
-          const expr = calcExpr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
-          const result = Math.round(Function('"use strict"; return (' + expr + ')')() * 100) / 100;
-          calcDisplay.textContent = isFinite(result) ? String(result) : 'ERROR';
-          calcExpr = String(result);
-        } catch { calcDisplay.textContent = 'ERROR'; calcExpr = ''; }
-      } else {
-        calcExpr += t;
-        calcDisplay.textContent = calcExpr;
-      }
-    });
-  });
-   
   // Esc
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (!document.getElementById('addfood-overlay').classList.contains('hidden')) closeAddFood();
     else if (!document.getElementById('modal-overlay').classList.contains('hidden')) closeModal();
+  });
+
+  // ── 計算機 ──
+  let calcExpr = '';
+
+  function calcEvaluate() {
+    try {
+      const expr = calcExpr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+      if (!expr) return '0';
+      const result = Function('"use strict"; return (' + expr + ')')();
+      if (!isFinite(result)) return 'ERROR';
+      return String(Math.round(result * 100) / 100);
+    } catch { return 'ERROR'; }
+  }
+
+  document.getElementById('calc-btn').addEventListener('click', () => {
+    const panel = document.getElementById('calc-panel');
+    panel.classList.toggle('hidden');
+    calcExpr = '';
+    document.getElementById('calc-display').textContent = '0';
+  });
+
+  document.querySelectorAll('.calc-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const display = document.getElementById('calc-display');
+      const t = btn.textContent.trim();
+
+      if (t === 'C') {
+        calcExpr = ''; display.textContent = '0';
+      } else if (t === '=') {
+        const result = calcEvaluate();
+        display.textContent = result;
+        calcExpr = result === 'ERROR' ? '' : result;
+      } else if (t === '✓ 確認') {
+        // 確認 = 先計算，再填入花費欄，再關閉計算機
+        const result = calcEvaluate();
+        if (result !== 'ERROR' && result !== '0') {
+          document.getElementById('modal-cost').value = result;
+        } else if (result !== 'ERROR') {
+          document.getElementById('modal-cost').value = result;
+        }
+        display.textContent = result;
+        calcExpr = result === 'ERROR' ? '' : result;
+        document.getElementById('calc-panel').classList.add('hidden');
+      } else {
+        // 數字或運算子
+        const ops = ['+', '−', '×', '÷'];
+        const lastIsOp = ops.some(op => calcExpr.endsWith(op));
+        const isOp = ops.includes(t) || t === '.';
+        // 防止連續運算符
+        if (isOp && lastIsOp && t !== '.') {
+          calcExpr = calcExpr.slice(0, -1) + t;
+        } else {
+          calcExpr += t;
+        }
+        display.textContent = calcExpr;
+      }
+    });
   });
 }
 
