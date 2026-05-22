@@ -1,0 +1,24 @@
+{
+  "name": "隨機亂數",
+  "short_name": "隨機亂數",
+  "description": "連續數字、貼上字串、剪刀石頭布隨機產生器",
+  "start_url": "./Random_Picker.html",
+  "display": "standalone",
+  "background_color": "#f0f4f0",
+  "theme_color": "#7cb342",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

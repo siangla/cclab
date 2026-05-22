@@ -8,10 +8,215 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="隨機亂數">
 <meta name="theme-color" content="#7cb342">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" type="image/png" href="icon.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <title>隨機亂數</title>
-<link rel="stylesheet" href="style.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f0f4f0;
+  --card: #ffffff;
+  --tab-active: #7cb342;
+  --tab-inactive: #cfd8c7;
+  --btn-primary: #1976d2;
+  --btn-primary-hover: #1565c0;
+  --text: #2e3a2e;
+  --text-muted: #7a8c7a;
+  --border: #d4e0d4;
+  --result-bg: #e8f5e9;
+  --result-border: #a5d6a7;
+}
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 32px;
+  color: var(--text);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0 16px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.app-icon-emoji { font-size: 2.8rem; line-height: 1; flex-shrink: 0; }
+
+.app-header h1 {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+  color: var(--tab-active);
+  text-transform: uppercase;
+}
+
+.container {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  padding: 28px 32px 26px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.tabs { display: flex; gap: 6px; margin-bottom: 26px; justify-content: center; }
+
+.tab {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.92rem;
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.12s;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab.active { background: var(--tab-active); color: #fff; box-shadow: 0 2px 8px rgba(124,179,66,0.25); }
+.tab:not(.active) { background: var(--tab-inactive); color: #555; }
+.tab:hover:not(.active) { background: #b8ccb0; transform: translateY(-1px); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.row label { font-size: 1rem; color: var(--text-muted); white-space: nowrap; }
+
+.row input[type="number"] {
+  flex: 1; min-width: 80px; padding: 9px 14px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text); background: #f9fbf9; transition: border 0.15s; outline: none;
+}
+.row input:focus { border-color: var(--tab-active); background: #fff; }
+
+textarea {
+  width: 100%; min-height: 120px; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text); resize: vertical; outline: none;
+  transition: border 0.15s; background: #f9fbf9; margin-bottom: 14px;
+}
+textarea:focus { border-color: var(--tab-active); background: #fff; }
+
+.btn-generate {
+  display: block; margin: 10px auto 0; padding: 12px 36px;
+  background: var(--btn-primary); color: #fff; border: none; border-radius: 10px;
+  font-size: 1.05rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 2px 10px rgba(25,118,210,0.18); letter-spacing: 0.04em;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-generate:hover { background: var(--btn-primary-hover); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(25,118,210,0.28); }
+.btn-generate:active { transform: translateY(0); }
+
+.result-box {
+  margin-top: 20px; background: var(--result-bg); border: 1.5px solid var(--result-border);
+  border-radius: 10px; padding: 14px 18px; font-size: 1.1rem; color: #2e7d32;
+  font-weight: 700; text-align: center; min-height: 48px;
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px;
+}
+
+.result-tag {
+  background: #fff; border: 1.5px solid #a5d6a7; border-radius: 6px;
+  padding: 4px 12px; font-size: 1rem; color: #1b5e20; font-weight: 700;
+  animation: popIn 0.25s ease;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.rps-prompt { text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 14px; }
+.rps-choices { display: flex; gap: 16px; justify-content: center; margin-bottom: 18px; flex-wrap: wrap; }
+.rps-col { display: flex; flex-direction: column; align-items: center; }
+
+.rps-btn {
+  width: 90px; height: 90px; border-radius: 50%;
+  border: 2.5px solid var(--border); background: #f9fbf9; font-size: 2.4rem;
+  cursor: pointer; transition: border 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
+  display: flex; align-items: center; justify-content: center; outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.rps-btn:hover { background: #e8f5e9; border-color: var(--tab-active); transform: scale(1.08); box-shadow: 0 4px 16px rgba(124,179,66,0.22); }
+.rps-btn.selected { border-color: var(--tab-active); background: #dcedc8; box-shadow: 0 0 0 3px rgba(124,179,66,0.25); }
+.rps-label { text-align: center; font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+
+.rps-result { margin-top: 18px; border-radius: 12px; padding: 16px 18px; text-align: center; display: none; }
+.rps-result.show { display: block; animation: popIn 0.3s ease; }
+.rps-result .vs-row { display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 2.5rem; margin-bottom: 10px; }
+.rps-result .vs-text { font-size: 1rem; color: var(--text-muted); font-weight: 700; }
+.rps-outcome { font-size: 1.3rem; font-weight: 900; letter-spacing: 0.06em; }
+.rps-outcome.win  { color: #2e7d32; }
+.rps-outcome.lose { color: #c62828; }
+.rps-outcome.draw { color: #e65100; }
+.rps-sub { font-size: 0.92rem; color: var(--text-muted); margin-top: 4px; }
+
+.rps-round-btn {
+  display: block; margin: 10px auto 0; padding: 10px 28px;
+  background: var(--tab-active); color: #fff; border: none; border-radius: 8px;
+  font-size: 0.97rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.rps-round-btn:hover { background: #558b2f; transform: translateY(-1px); }
+
+.select-count-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; justify-content: flex-end; }
+.select-count-row label { color: var(--text-muted); font-size: 0.97rem; }
+.select-count-row input {
+  width: 90px; padding: 7px 12px; border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 0.97rem; font-family: 'Noto Sans TC', sans-serif;
+  outline: none; background: #f9fbf9;
+}
+.select-count-row input:focus { border-color: var(--tab-active); background: #fff; }
+
+/* 安裝提示横幅 */
+#install-banner {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 999;
+  max-width: 480px;
+  width: calc(100% - 32px);
+}
+#install-banner span { flex: 1; font-size: 0.9rem; color: var(--text); }
+#install-banner button {
+  padding: 8px 16px; border: none; border-radius: 8px;
+  font-family: 'Noto Sans TC', sans-serif; font-size: 0.88rem;
+  font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+#btn-install { background: var(--tab-active); color: #fff; }
+#btn-dismiss { background: var(--tab-inactive); color: #555; }
+
+@media (max-width: 400px) {
+  .container { padding: 22px 18px 20px; }
+  .tabs { gap: 4px; }
+  .tab { padding: 7px 12px; font-size: 0.85rem; }
+  .rps-btn { width: 78px; height: 78px; font-size: 2rem; }
+}
+</style>
 </head>
 <body>
 
@@ -77,6 +282,161 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<!-- 安裝提示橫幅 -->
+<div id="install-banner" style="display:none;">
+  <span>🎲 將「隨機亂數」加入主畫面，隨時離線使用！</span>
+  <button id="btn-install">安裝</button>
+  <button id="btn-dismiss">略過</button>
+</div>
+
+<script>
+// ── Service Worker 註冊 ────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+
+// ── PWA 安裝提示 ──────────────────────────────────────
+let deferredPrompt = null;
+const banner   = document.getElementById('install-banner');
+const btnInstall  = document.getElementById('btn-install');
+const btnDismiss  = document.getElementById('btn-dismiss');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  banner.style.display = 'flex';
+});
+
+btnInstall.addEventListener('click', async () => {
+  banner.style.display = 'none';
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+});
+
+btnDismiss.addEventListener('click', () => {
+  banner.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  banner.style.display = 'none';
+  deferredPrompt = null;
+});
+
+// ── Tab switching ──────────────────────────────────────
+function switchTab(tab) {
+  const keys = ['numbers', 'strings', 'rps'];
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', keys[i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ── Helper ─────────────────────────────────────────────
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function renderTags(box, items) {
+  box.style.display = 'flex';
+  box.innerHTML = items.map(v => `<span class="result-tag">${v}</span>`).join('');
+}
+
+function renderError(box, msg) {
+  box.style.display = 'flex';
+  box.innerHTML = `<span style="color:#c62828;font-weight:500;">${msg}</span>`;
+}
+
+// ── 連續數字 ──────────────────────────────────────────
+function generateNumbers() {
+  const from  = parseInt(document.getElementById('numFrom').value);
+  const to    = parseInt(document.getElementById('numTo').value);
+  const count = parseInt(document.getElementById('numCount').value);
+  const box   = document.getElementById('num-result');
+
+  if (isNaN(from) || isNaN(to) || isNaN(count) || count < 1)
+    return renderError(box, '請填寫完整的範圍和數量');
+  if (from > to) return renderError(box, '「從」不能大於「到」');
+
+  const range = [];
+  for (let i = from; i <= to; i++) range.push(i);
+  if (count > range.length) return renderError(box, '數量超過範圍內的數字個數');
+
+  renderTags(box, shuffle(range).slice(0, count).sort((a, b) => a - b));
+}
+
+// ── 貼上字串 ──────────────────────────────────────────
+function generateStrings() {
+  const raw   = document.getElementById('strInput').value;
+  const count = parseInt(document.getElementById('strCount').value);
+  const box   = document.getElementById('str-result');
+  const items = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+  if (items.length === 0)        return renderError(box, '請輸入至少一個字串');
+  if (isNaN(count) || count < 1) return renderError(box, '請輸入要選取的數量');
+  if (count > items.length)      return renderError(box, '數量超過字串個數');
+
+  renderTags(box, shuffle([...items]).slice(0, count));
+}
+
+// ── 剪刀石頭布 ────────────────────────────────────────
+const RPS_EMOJI = { scissors: '✌️', rock: '✊', paper: '🖐️' };
+const RPS_LABEL = { scissors: '剪刀', rock: '石頭', paper: '布' };
+const RPS_BEATS = { scissors: 'paper', rock: 'scissors', paper: 'rock' };
+
+function chooseRPS(choice) {
+  document.querySelectorAll('.rps-btn').forEach(btn => btn.classList.remove('selected'));
+  document.getElementById('rps-' + choice).classList.add('selected');
+
+  const options = ['scissors', 'rock', 'paper'];
+  const cpu = options[Math.floor(Math.random() * 3)];
+
+  let outcome, outcomeClass, outcomeMsg;
+  if (choice === cpu) {
+    outcome = '平局！'; outcomeClass = 'draw'; outcomeMsg = '再來一局？';
+  } else if (RPS_BEATS[choice] === cpu) {
+    outcome = '🎉 你贏了！'; outcomeClass = 'win';
+    outcomeMsg = `${RPS_LABEL[choice]} 贏了 ${RPS_LABEL[cpu]}`;
+  } else {
+    outcome = '😢 你輸了！'; outcomeClass = 'lose';
+    outcomeMsg = `${RPS_LABEL[cpu]} 贏了 ${RPS_LABEL[choice]}`;
+  }
+
+  const bgMap  = { win: '#e8f5e9', lose: '#ffebee', draw: '#fff8e1' };
+  const brdMap = { win: '#a5d6a7', lose: '#ef9a9a', draw: '#ffe082' };
+
+  const area = document.getElementById('rps-result-area');
+  area.className = 'rps-result show';
+  area.style.background = bgMap[outcomeClass];
+  area.style.border = `1.5px solid ${brdMap[outcomeClass]}`;
+  area.innerHTML = `
+    <div class="vs-row">
+      <div>${RPS_EMOJI[choice]}</div>
+      <div class="vs-text">VS</div>
+      <div>${RPS_EMOJI[cpu]}</div>
+    </div>
+    <div class="rps-outcome ${outcomeClass}">${outcome}</div>
+    <div class="rps-sub">${outcomeMsg}</div>
+    <button class="rps-round-btn" onclick="resetRPS()">再來一局</button>
+  `;
+}
+
+function resetRPS() {
+  document.querySelectorAll('.rps-btn').forEach(btn => btn.classList.remove('selected'));
+  const area = document.getElementById('rps-result-area');
+  area.className = 'rps-result';
+  area.innerHTML = '';
+}
+</script>
 </body>
 </html>
