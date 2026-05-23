@@ -2,7 +2,7 @@
   "name": "隨機亂數",
   "short_name": "隨機亂數",
   "description": "連續數字、貼上字串、剪刀石頭布隨機產生器",
-  "start_url": "./Random_Picker.html",
+  "start_url": "./random-picker.html",
   "display": "standalone",
   "background_color": "#f0f4f0",
   "theme_color": "#7cb342",
