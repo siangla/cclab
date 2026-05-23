@@ -318,7 +318,7 @@ function editMealOpen(id) {
   const types    = ['早餐','午餐','晚餐','點心','其他'];
   const statuses = ['計畫中','已完成'];
   const diffs    = ['','簡單','中等','困難'];
-  const ratings  = ['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','🌟'];
+  const ratings  = ['','👎','⭐','⭐⭐','⭐⭐⭐','🌟🌟🌟'];
   document.getElementById('modal-body').innerHTML = `
     <div class="fg" style="margin-bottom:.55rem">
       <label>名稱</label><input id="m-meal-name" value="${esc(x.name)}">
@@ -338,7 +338,14 @@ function editMealOpen(id) {
       </div>
       <div class="fg"><label>金額 (NT$)</label><input id="m-meal-price" type="number" value="${x.price||0}"></div>
       <div class="fg"><label>評分</label>
-        <select id="m-meal-rating">${ratings.map(r=>`<option value="${r}" ${r===x.rating?'selected':''}>${r||'—'}</option>`).join('')}</select>
+        <select id="m-meal-rating">
+          <option value="" ${!x.rating?'selected':''}>—</option>
+          <option value="🌟🌟🌟" ${'🌟🌟🌟'===x.rating?'selected':''}>🌟🌟🌟 超好吃</option>
+          <option value="⭐⭐⭐" ${'⭐⭐⭐'===x.rating?'selected':''}>⭐⭐⭐ 好吃</option>
+          <option value="⭐⭐" ${'⭐⭐'===x.rating?'selected':''}>⭐⭐ 普通</option>
+          <option value="⭐" ${'⭐'===x.rating?'selected':''}>⭐ 還行</option>
+          <option value="👎" ${'👎'===x.rating?'selected':''}>👎 難吃</option>
+        </select>
       </div>
     </div>
     <div class="fg" style="margin-top:.55rem">
@@ -397,8 +404,8 @@ function renderMeal() {
     const rateHTML = showRate ? `
       <div class="rate-prompt">
         <span class="rate-prompt-label">快速評分：</span>
-        ${['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','🌟'].map((r,i) =>
-          `<button class="star-btn" data-id="${x.id}" data-rating="${r}" title="${r}">${'★'.repeat(i+1)}</button>`
+        ${[['👎','難吃'],['⭐','還行'],['⭐⭐','普通'],['⭐⭐⭐','好吃'],['🌟🌟🌟','超好吃']].map(([r,label]) =>
+          `<button class="star-btn" data-id="${x.id}" data-rating="${r}" title="${label}">${label}</button>`
         ).join('')}
       </div>` : '';
 
@@ -549,7 +556,7 @@ function drawCatChart(items) {
 
 function drawRatingChart(items) {
   dc('rating');
-  const lbs   = ['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','🌟'];
+  const lbs   = ['👎','⭐','⭐⭐','⭐⭐⭐','🌟🌟🌟'];
   const vals  = lbs.map(l => items.filter(x=>x.rating===l).length);
   const cols  = [MAC[0], MAC[3], MAC[5], MAC[2], MAC[4]]; // pink→peach→lemon→mint→sky
   const ctx = document.getElementById('ch-rating');
