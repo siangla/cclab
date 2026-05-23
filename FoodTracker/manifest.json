@@ -2,7 +2,7 @@
   "name": "廚房日記",
   "short_name": "廚房日記",
   "description": "記錄購物清單、飲食與料理的生活日記",
-  "start_url": "./index.html",
+  "start_url": "./food-tracker.html",
   "display": "standalone",
   "background_color": "#faf6ef",
   "theme_color": "#1a1208",
