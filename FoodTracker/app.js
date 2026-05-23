@@ -141,7 +141,6 @@ function addShop() {
     price: parseFloat(getVal('shop-price'))||0,
     date:  getVal('shop-date')||todayStr(),
     cat:   getVal('shop-cat'),
-    pri:   getVal('shop-pri'),
     note:  getVal('shop-note').trim(),
     bought:false, createdAt:new Date().toISOString()
   });
@@ -175,16 +174,9 @@ function editShopOpen(id) {
     </div>
     <div class="form-row" style="margin-top:.45rem">
       <div class="fg"><label>分類</label><select id="m-shop-cat">${shopCatOpts(x.cat)}</select></div>
-      <div class="fg"><label>優先</label>
-        <select id="m-shop-pri">
-          <option ${x.pri==='一般'?'selected':''}>一般</option>
-          <option ${x.pri==='重要'?'selected':''}>重要</option>
-          <option ${x.pri==='緊急'?'selected':''}>緊急</option>
-        </select>
-      </div>
     </div>
     <div class="fg" style="margin-top:.55rem">
-      <label>備注</label><input id="m-shop-note" value="${esc(x.note||'')}">
+      <label>備註</label><input id="m-shop-note" value="${esc(x.note||'')}">
     </div>`;
   openModal();
 }
@@ -197,7 +189,7 @@ function shopCatOpts(sel) {
 function renderShop() {
   const { first, last } = monthRange();
   const q   = getVal('shop-search').toLowerCase();
-  const cat = getVal('shop-filter-cat');
+  const cat = '';
   const st  = getVal('shop-filter-status');
 
   // 篩選：當月 + 搜尋/分類/狀態
@@ -205,7 +197,6 @@ function renderShop() {
     const d = x.date||'';
     if (d < first || d > last) return false;  // 只顯示當月
     if (q && !x.name.toLowerCase().includes(q) && !(x.note||'').toLowerCase().includes(q)) return false;
-    if (cat && x.cat!==cat) return false;
     if (st!=='' && String(x.bought)!==st) return false;
     return true;
   });
@@ -220,9 +211,7 @@ function renderShop() {
   document.getElementById('shop-stats').innerHTML = `
     <div class="stat-chip"><strong>${tot}</strong> 項本月</div>
     <div class="stat-chip"><strong>${tot-bgt}</strong> 項待買</div>
-    <div class="stat-chip"><strong>${bgt}</strong> 項已買</div>
     <div class="stat-chip hl"><strong>NT$${totAmt.toLocaleString()}</strong> 本月總額</div>
-    <div class="stat-chip"><strong>NT$${bgtAmt.toLocaleString()}</strong> 已花費</div>
   `;
 
   const el = document.getElementById('shop-list');
@@ -264,7 +253,6 @@ function renderShop() {
           <div class="item-meta">
             ${x.price?`<span class="item-price">NT$${Number(x.price).toLocaleString()}</span>`:''}
             ${x.cat?`<span class="tag cat-color-${ci}">${esc(x.cat)}</span>`:''}
-            <span class="tag ${x.pri==='緊急'?'tg-high':x.pri==='重要'?'tg-mid':'tg-low'}">${esc(x.pri)}</span>
             ${x.note?`<span>${esc(x.note)}</span>`:''}
           </div>
         </div>
@@ -298,13 +286,12 @@ function addMeal() {
     type:    getVal('meal-type'),
     status:  getVal('meal-status'),
     diff:    getVal('meal-diff'),
-    serving: getVal('meal-serving').trim(),
     price:   parseFloat(getVal('meal-price'))||0,
     rating:  getVal('meal-rating'),
     note:    getVal('meal-note').trim(),
     createdAt: new Date().toISOString()
   });
-  ['meal-name','meal-note','meal-serving'].forEach(id => setVal(id,''));
+  ['meal-name','meal-note'].forEach(id => setVal(id,''));
   setVal('meal-price',''); setVal('meal-rating',''); setVal('meal-diff','');
   save(); renderMeal(); toast('已新增');
 }
@@ -329,9 +316,9 @@ function editMealOpen(id) {
   editCtx = {type:'meal', id};
   document.getElementById('modal-title').textContent = '編輯飲食 / 料理';
   const types    = ['早餐','午餐','晚餐','點心','其他'];
-  const statuses = ['計畫中','準備中','已完成'];
+  const statuses = ['計畫中','已完成'];
   const diffs    = ['','簡單','中等','困難'];
-  const ratings  = ['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐'];
+  const ratings  = ['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','🌟'];
   document.getElementById('modal-body').innerHTML = `
     <div class="fg" style="margin-bottom:.55rem">
       <label>名稱</label><input id="m-meal-name" value="${esc(x.name)}">
@@ -349,14 +336,13 @@ function editMealOpen(id) {
       <div class="fg"><label>難度</label>
         <select id="m-meal-diff">${diffs.map(d=>`<option value="${d}" ${d===x.diff?'selected':''}>${d||'—'}</option>`).join('')}</select>
       </div>
-      <div class="fg"><label>份數</label><input id="m-meal-serving" value="${esc(x.serving||'')}"></div>
       <div class="fg"><label>金額 (NT$)</label><input id="m-meal-price" type="number" value="${x.price||0}"></div>
       <div class="fg"><label>評分</label>
         <select id="m-meal-rating">${ratings.map(r=>`<option value="${r}" ${r===x.rating?'selected':''}>${r||'—'}</option>`).join('')}</select>
       </div>
     </div>
     <div class="fg" style="margin-top:.55rem">
-      <label>食材 / 備注</label>
+      <label>食材 / 備註</label>
       <textarea id="m-meal-note" style="min-height:68px">${esc(x.note||'')}</textarea>
     </div>`;
   openModal();
@@ -367,7 +353,6 @@ function renderMeal() {
   const q    = getVal('meal-search').toLowerCase();
   const ft   = getVal('meal-filter-type');
   const fs   = getVal('meal-filter-status');
-  const sort = getVal('meal-sort');
 
   let items = D.meal.filter(x => {
     const d = x.date||'';
@@ -378,14 +363,7 @@ function renderMeal() {
     return true;
   });
 
-  if (sort==='date') items.sort((a,b) => (b.date||'').localeCompare(a.date||''));
-  else if (sort==='status') {
-    const so = {計畫中:0, 準備中:1, 已完成:2};
-    items.sort((a,b) => (so[a.status]??3)-(so[b.status]??3) || (b.date||'').localeCompare(a.date||''));
-  } else if (sort==='rating') {
-    const rv = r => ({'⭐':1,'⭐⭐':2,'⭐⭐⭐':3,'⭐⭐⭐⭐':4,'⭐⭐⭐⭐⭐':5}[r]||0);
-    items.sort((a,b) => rv(b.rating)-rv(a.rating));
-  }
+  items.sort((a,b) => (b.date||'').localeCompare(a.date||''));
 
   // stats（全月）
   const monthMeals = D.meal.filter(x => (x.date||'')>=first && (x.date||'')<=last);
@@ -396,7 +374,6 @@ function renderMeal() {
   document.getElementById('meal-stats').innerHTML = `
     <div class="stat-chip"><strong>${total}</strong> 筆本月</div>
     <div class="stat-chip"><strong>${planned}</strong> 計畫中</div>
-    <div class="stat-chip"><strong>${cooking}</strong> 準備中</div>
     <div class="stat-chip hl"><strong>${done}</strong> 已完成</div>
   `;
 
@@ -420,12 +397,12 @@ function renderMeal() {
     const rateHTML = showRate ? `
       <div class="rate-prompt">
         <span class="rate-prompt-label">快速評分：</span>
-        ${['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐'].map((r,i) =>
+        ${['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','🌟'].map((r,i) =>
           `<button class="star-btn" data-id="${x.id}" data-rating="${r}" title="${r}">${'★'.repeat(i+1)}</button>`
         ).join('')}
       </div>` : '';
 
-    const pills = ['計畫中','準備中','已完成'].map(s =>
+    const pills = ['計畫中','已完成'].map(s =>
       `<button class="spill ${x.status===s?pillKey[s]:''}" data-id="${x.id}" data-status="${s}">${statusLabel[s]}</button>`
     ).join('');
 
@@ -446,7 +423,6 @@ function renderMeal() {
           </div>
           <div class="mc-meta">
             ${x.diff    ? `<span>${diffIcon[x.diff]||''} ${esc(x.diff)}</span>` : ''}
-            ${x.serving ? `<span>👥 ${esc(x.serving)}</span>` : ''}
             ${x.price   ? `<span class="mc-price">NT$${Number(x.price).toLocaleString()}</span>` : ''}
             ${x.rating  ? `<span class="mc-rating">${x.rating}</span>` : ''}
           </div>
@@ -573,7 +549,7 @@ function drawCatChart(items) {
 
 function drawRatingChart(items) {
   dc('rating');
-  const lbs   = ['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐'];
+  const lbs   = ['⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','🌟'];
   const vals  = lbs.map(l => items.filter(x=>x.rating===l).length);
   const cols  = [MAC[0], MAC[3], MAC[5], MAC[2], MAC[4]]; // pink→peach→lemon→mint→sky
   const ctx = document.getElementById('ch-rating');
@@ -728,7 +704,6 @@ function saveModal() {
       x.price = parseFloat(getVal('m-shop-price'))||0;
       x.date  = getVal('m-shop-date');
       x.cat   = getVal('m-shop-cat');
-      x.pri   = getVal('m-shop-pri');
       x.note  = getVal('m-shop-note').trim();
     }
     save(); renderShop();
@@ -740,7 +715,6 @@ function saveModal() {
       x.type    = getVal('m-meal-type');
       x.status  = getVal('m-meal-status');
       x.diff    = getVal('m-meal-diff');
-      x.serving = getVal('m-meal-serving').trim();
       x.price   = parseFloat(getVal('m-meal-price'))||0;
       x.rating  = getVal('m-meal-rating');
       x.note    = getVal('m-meal-note').trim();
@@ -757,14 +731,14 @@ function exportExcel() {
   const wb = XLSX.utils.book_new();
   // uid 欄位放在最後，不顯示於介面，用於匯入去重
   const ws1 = XLSX.utils.aoa_to_sheet([
-    ['品項名稱','數量','金額(NT$)','採購日期','分類','優先','備注','已購買','建立時間','uid'],
+    ['品項名稱','數量','金額(NT$)','採購日期','分類','優先','備註','已購買','建立時間','uid'],
     ...D.shop.map(x=>[x.name,x.qty,x.price||0,x.date,x.cat,x.pri,x.note,x.bought?'是':'否',x.createdAt,x.id])
   ]);
   ws1['!cols']=[{wch:20},{wch:8},{wch:10},{wch:12},{wch:12},{wch:8},{wch:25},{wch:8},{wch:22},{wch:16}];
   XLSX.utils.book_append_sheet(wb,ws1,'購物清單');
 
   const ws2 = XLSX.utils.aoa_to_sheet([
-    ['名稱','日期','餐別','狀態','難度','份數','金額(NT$)','評分','備注','建立時間','uid'],
+    ['名稱','日期','餐別','狀態','難度','份數','金額(NT$)','評分','備註','建立時間','uid'],
     ...D.meal.map(x=>[x.name,x.date,x.type,x.status,x.diff,x.serving,x.price||0,x.rating,x.note,x.createdAt,x.id])
   ]);
   ws2['!cols']=[{wch:20},{wch:12},{wch:8},{wch:10},{wch:8},{wch:10},{wch:10},{wch:14},{wch:40},{wch:22},{wch:16}];

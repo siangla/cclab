@@ -574,3 +574,13 @@ canvas { display: block; width: 100% !important; }
   font-size: 1.1rem; cursor: pointer; padding: .2rem; flex-shrink: 0;
 }
 .pwa-close:hover { color: var(--ink); }
+
+/* ── 備註列：textarea + 按鈕同行 ── */
+.form-row-note {
+  align-items: flex-end;
+}
+.fg-btn-note {
+  align-self: flex-end;
+  padding-bottom: 0;
+}
+/* 購物清單 stats-bar: 不需要已買/已花費 chip 的額外樣式已移除 */
