@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>廚房日記</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1208">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="廚房日記">
+  <link rel="apple-touch-icon" href="icon-152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+  <!-- Fonts & styles -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="icon-72.png" class="logo-icon" alt="廚房日記">
+      <span class="logo-en">Kitchen Journal</span>
+      <span class="logo-cn">廚房日記</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-hd btn-hd-ghost" onclick="document.getElementById('fileIn').click()">⬆ 匯入</button>
+      <button class="btn-hd btn-hd-primary" onclick="exportExcel()">⬇ 匯出</button>
+      <input type="file" id="fileIn" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+    </div>
+  </div>
+</header>
+
+<!-- ══ 全域月份切換器 ══ -->
+<div class="month-nav-wrap">
+  <div class="month-nav">
+    <button class="month-btn" onclick="shiftMonth(-1)">‹</button>
+    <span class="month-label" id="month-label"></span>
+    <button class="month-btn" onclick="shiftMonth(1)">›</button>
+    <button class="month-btn month-today" onclick="goToday()">今天</button>
+  </div>
+</div>
+
+<!-- ══ Tabs ══ -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('shop')">🛒 <span>購物清單</span></div>
+    <div class="tab" onclick="switchTab('meal')">🥘 <span>飲食&料理</span></div>
+    <div class="tab" onclick="switchTab('analytics')">📊 <span>統計分析</span></div>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+  <!-- ══════ 購物清單 ══════ -->
+  <div id="panel-shop" class="panel active">
+    <div class="add-card">
+      <div class="form-row">
+        <div class="fg fg-grow2">
+          <label>品項名稱 *</label>
+          <input id="shop-name" placeholder="雞蛋、牛奶、番茄…" onkeydown="if(event.key==='Enter')addShop()">
+        </div>
+        <div class="fg fg-narrow">
+          <label>數量</label>
+          <input id="shop-qty" placeholder="2盒">
+        </div>
+        <div class="fg fg-narrow">
+          <label>金額 (NT$)</label>
+          <input id="shop-price" type="number" min="0" placeholder="0">
+        </div>
+        <div class="fg">
+          <label>採購日期</label>
+          <input id="shop-date" type="date">
+        </div>
+        <div class="fg">
+          <label>分類</label>
+          <select id="shop-cat">
+            <option value="">無</option>
+            <option>蔬菜水果</option><option>肉類海鮮</option><option>乳製品</option>
+            <option>零食飲料</option><option>調味料</option><option>乾貨罐頭</option>
+            <option>冷凍食品</option><option>清潔用品</option><option>其他</option>
+          </select>
+        </div>
+        <div class="fg fg-narrow">
+          <label>優先</label>
+          <select id="shop-pri">
+            <option>一般</option><option>重要</option><option>緊急</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>備注</label>
+          <input id="shop-note" placeholder="品牌、規格…">
+        </div>
+        <div class="fg fg-btn">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="addShop()">＋ 新增</button>
+        </div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">採買清單</div>
+      <div class="toolbar">
+        <div class="filter-bar">
+          <input class="fi fi-wide" id="shop-search" placeholder="🔍 搜尋品項…" oninput="renderShop()">
+          <select class="fi" id="shop-filter-cat" onchange="renderShop()">
+            <option value="">全部分類</option>
+            <option>蔬菜水果</option><option>肉類海鮮</option><option>乳製品</option>
+            <option>零食飲料</option><option>調味料</option><option>乾貨罐頭</option>
+            <option>冷凍食品</option><option>清潔用品</option><option>其他</option>
+          </select>
+          <select class="fi" id="shop-filter-status" onchange="renderShop()">
+            <option value="">全部狀態</option>
+            <option value="false">未購買</option>
+            <option value="true">已購買</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="stats-bar" id="shop-stats"></div>
+    <div id="shop-list"></div>
+  </div>
+
+  <!-- ══════ 飲食 & 料理 ══════ -->
+  <div id="panel-meal" class="panel">
+    <div class="add-card">
+      <div class="form-row">
+        <div class="fg fg-grow2">
+          <label>名稱 *</label>
+          <input id="meal-name" placeholder="紅燒牛肉、蛤蜊麵、便當…">
+        </div>
+        <div class="fg">
+          <label>日期</label>
+          <input id="meal-date" type="date">
+        </div>
+        <div class="fg fg-narrow">
+          <label>餐別</label>
+          <select id="meal-type">
+            <option>早餐</option><option selected>午餐</option>
+            <option>晚餐</option><option>點心</option><option>其他</option>
+          </select>
+        </div>
+        <div class="fg fg-narrow">
+          <label>狀態</label>
+          <select id="meal-status">
+            <option value="計畫中">📌 計畫中</option>
+            <option value="準備中">🔥 準備中</option>
+            <option value="已完成" selected>✅ 已完成</option>
+          </select>
+        </div>
+        <div class="fg fg-narrow">
+          <label>難度</label>
+          <select id="meal-diff">
+            <option value="" selected>—</option>
+            <option>簡單</option><option>中等</option><option>困難</option>
+          </select>
+        </div>
+        <div class="fg fg-narrow">
+          <label>份數</label>
+          <input id="meal-serving" placeholder="2人份">
+        </div>
+        <div class="fg fg-narrow">
+          <label>金額 (NT$)</label>
+          <input id="meal-price" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg fg-narrow">
+          <label>評分</label>
+          <select id="meal-rating">
+            <option value="">—</option>
+            <option value="⭐⭐⭐⭐⭐">⭐⭐⭐⭐⭐ 超好吃</option>
+            <option value="⭐⭐⭐⭐">⭐⭐⭐⭐ 好吃</option>
+            <option value="⭐⭐⭐">⭐⭐⭐ 普通</option>
+            <option value="⭐⭐">⭐⭐ 還行</option>
+            <option value="⭐">⭐ 難吃</option>
+          </select>
+        </div>
+        <div class="fg fg-grow3">
+          <label>食材 / 心得 / 備注</label>
+          <textarea id="meal-note" placeholder="需要材料、步驟、心得，或地點…"></textarea>
+        </div>
+        <div class="fg fg-btn">
+          <label>&nbsp;</label>
+          <button class="btn btn-sage" onclick="addMeal()">＋ 新增</button>
+        </div>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">飲食 &amp; 料理紀錄</div>
+      <div class="toolbar">
+        <div class="filter-bar">
+          <input class="fi fi-wide" id="meal-search" placeholder="🔍 搜尋…" oninput="renderMeal()">
+          <select class="fi" id="meal-filter-type" onchange="renderMeal()">
+            <option value="">全部餐別</option>
+            <option>早餐</option><option>午餐</option><option>晚餐</option><option>點心</option><option>其他</option>
+          </select>
+          <select class="fi" id="meal-filter-status" onchange="renderMeal()">
+            <option value="">全部狀態</option>
+            <option value="計畫中">計畫中</option>
+            <option value="準備中">準備中</option>
+            <option value="已完成">已完成</option>
+          </select>
+          <select class="fi" id="meal-sort" onchange="renderMeal()">
+            <option value="date">依日期</option>
+            <option value="status">依狀態</option>
+            <option value="rating">依評分</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="stats-bar" id="meal-stats"></div>
+    <div class="meal-list" id="meal-list"></div>
+  </div>
+
+  <!-- ══════ 統計分析 ══════ -->
+  <div id="panel-analytics" class="panel">
+    <div class="section-header">
+      <div class="section-title">統計分析</div>
+    </div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="charts-grid">
+      <div class="chart-card wide">
+        <div class="chart-title">📈 每日消費金額</div>
+        <div class="chart-wrap"><canvas id="ch-daily"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🥕 消費分類佔比</div>
+        <div class="chart-wrap"><canvas id="ch-cat"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">⭐ 餐點評分分布</div>
+        <div class="chart-wrap"><canvas id="ch-rating"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🍽 餐別記錄次數</div>
+        <div class="chart-wrap"><canvas id="ch-mealtype"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .main-wrap -->
+
+<!-- PWA 安裝提示 -->
+<div id="pwa-banner" class="pwa-banner" style="display:none">
+  <div class="pwa-banner-inner">
+    <img src="icon-72.png" class="pwa-icon" alt="">
+    <div class="pwa-text">
+      <strong>加入主畫面</strong>
+      <span>像 App 一樣使用廚房日記</span>
+    </div>
+    <button class="btn btn-primary btn-sm" id="pwa-install-btn">安裝</button>
+    <button class="pwa-close" onclick="closePwaBanner()">✕</button>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<div class="modal-ov" id="modal-ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modal-title">編輯</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW registered', r.scope))
+      .catch(e => console.log('SW error', e));
+  });
+}
+
+// PWA Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('pwa-banner').style.display = 'block';
+});
+document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('pwa-banner').style.display = 'none';
+});
+function closePwaBanner() {
+  document.getElementById('pwa-banner').style.display = 'none';
+}
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-banner').style.display = 'none';
+});
+</script>
+<script src="app.js"></script>
+</body>
+</html>
