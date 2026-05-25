@@ -1,7 +1,7 @@
 // Service Worker — 今天吃什麼 PWA
 // 離線快取靜態資源，讓 App 在沒有網路時也能開啟
 
-const CACHE_NAME = 'eatwhat-v1';
+const CACHE_NAME = 'eatwhat-v20260525-1';
 const STATIC_ASSETS = [
   './eatwhat.html',
   './eatwhat.css',
