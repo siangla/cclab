@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bella's Space</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a1612" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bella's Space" />
+  <link rel="apple-touch-icon" href="icon-192.svg" />
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-block">
+        <div class="logo-mark">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M14 16 Q24 10 34 16 L34 32 Q24 38 14 32 Z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <circle cx="24" cy="24" r="3" fill="currentColor"/>
+            <line x1="24" y1="10" x2="24" y2="14" stroke="currentColor" stroke-width="1.2"/>
+            <line x1="24" y1="34" x2="24" y2="38" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">Bella's Space</span>
+          <span class="logo-tagline" id="tagline-text">在實務中學習，在開發中成長</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="clock-block">
+          <div class="clock-time" id="clock">00:00</div>
+          <div class="clock-date" id="date-display">載入中…</div>
+        </div>
+        <button class="btn-icon" id="btn-add" title="新增書籤">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button class="btn-icon" id="btn-settings" title="設定">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content">
+
+    <!-- Search bar -->
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="搜尋 Google…" autocomplete="off" spellcheck="false" />
+      </div>
+    </div>
+
+    <!-- Category sections -->
+    <div class="sections-wrap" id="sections-wrap">
+      <!-- Rendered by JS -->
+    </div>
+
+  </main>
+
+  <!-- ── MODAL: Add / Edit Bookmark ── -->
+  <div class="modal-overlay" id="modal-bookmark" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title">新增書籤</h2>
+        <button class="btn-icon modal-close" id="modal-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label>名稱
+          <input type="text" id="bm-name" placeholder="我的書籤" />
+        </label>
+        <label>網址
+          <input type="url" id="bm-url" placeholder="https://…" />
+        </label>
+        <label>描述
+          <input type="text" id="bm-desc" placeholder="簡短說明（選填）" />
+        </label>
+        <label>分類
+          <div class="select-row">
+            <select id="bm-category"></select>
+            <input type="text" id="bm-new-cat" placeholder="或新分類名稱" />
+          </div>
+        </label>
+        <label>顏色標籤
+          <div class="color-swatches" id="color-swatches"></div>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-delete-bm" style="display:none">刪除</button>
+        <button class="btn-primary" id="btn-save-bm">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Settings ── -->
+  <div class="modal-overlay" id="modal-settings" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>個人設定</h2>
+        <button class="btn-icon modal-close" id="settings-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label>頁面名稱
+          <input type="text" id="set-title" placeholder="Bella's Space" />
+        </label>
+        <label>副標語
+          <input type="text" id="set-tagline" placeholder="在實務中學習，在開發中成長" />
+        </label>
+        <label>背景主題
+          <div class="theme-options" id="theme-options"></div>
+        </label>
+        <label>底色深淺
+          <div class="brightness-row">
+            <span class="brightness-icon">◑</span>
+            <input type="range" id="set-brightness" min="0" max="100" step="1" value="50" />
+            <span class="brightness-icon">○</span>
+            <span class="brightness-label" id="brightness-label">中</span>
+          </div>
+        </label>
+        <label class="toggle-label">
+          <span>顯示時鐘</span>
+          <label class="toggle"><input type="checkbox" id="set-clock" checked/><span class="slider"></span></label>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" id="btn-save-settings">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Edit Section ── -->
+  <div class="modal-overlay" id="modal-section" aria-hidden="true">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-header">
+        <h2 id="modal-section-title">編輯分類</h2>
+        <button class="btn-icon modal-close" id="section-modal-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label>分類名稱
+          <input type="text" id="sec-name" placeholder="分類名稱" />
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-delete-sec">刪除分類</button>
+        <button class="btn-primary" id="btn-save-sec">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PWA install banner ── -->
+  <div class="install-banner" id="install-banner" style="display:none">
+    <span>📲 安裝為 App，離線也能使用</span>
+    <button id="btn-install">安裝</button>
+    <button class="btn-icon" id="btn-dismiss-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
