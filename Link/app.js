@@ -85,7 +85,7 @@ function applyTheme(themeId, brightness) {
   if (theme.forceLight) {
     bgL = 55 + (brightness / 100) * 41; // 55 → 96
   } else {
-    bgL = 8 + (brightness / 100) * 64;  // 8  → 72
+    bgL = 8 + (brightness / 100) * 74;  // 8  → 82
   }
 
   const bg      = `hsl(${h},${theme.sDark}%,${bgL.toFixed(1)}%)`;

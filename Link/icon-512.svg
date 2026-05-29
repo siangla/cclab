@@ -1,8 +1,10 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="100" fill="#1a1612"/>
-  <circle cx="256" cy="256" r="180" stroke="#c8965a" stroke-width="6" fill="none"/>
-  <path d="M140 190 Q256 120 372 190 L372 320 Q256 390 140 320 Z" stroke="#c8965a" stroke-width="5.5" fill="none"/>
-  <circle cx="256" cy="256" r="26" fill="#c8965a"/>
-  <line x1="256" y1="90" x2="256" y2="136" stroke="#c8965a" stroke-width="5.5"/>
-  <line x1="256" y1="376" x2="256" y2="422" stroke="#c8965a" stroke-width="5.5"/>
+  <rect width="512" height="512" rx="100" fill="#141313"/>
+  <polygon points="256,40 472,256 256,472 40,256" stroke="#debe83" stroke-width="13" fill="none"/>
+  <polygon points="256,108 388,256 256,404 124,256" stroke="#debe83" stroke-width="7" fill="none"/>
+  <line x1="256" y1="40"  x2="256" y2="108" stroke="#debe83" stroke-width="13"/>
+  <line x1="256" y1="404" x2="256" y2="472" stroke="#debe83" stroke-width="13"/>
+  <line x1="40"  y1="256" x2="108" y2="256" stroke="#debe83" stroke-width="13"/>
+  <line x1="404" y1="256" x2="472" y2="256" stroke="#debe83" stroke-width="13"/>
+  <circle cx="256" cy="256" r="30" fill="#debe83"/>
 </svg>

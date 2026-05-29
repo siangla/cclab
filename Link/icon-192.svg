@@ -1,8 +1,10 @@
 <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="192" height="192" rx="40" fill="#1a1612"/>
-  <circle cx="96" cy="96" r="64" stroke="#c8965a" stroke-width="3" fill="none"/>
-  <path d="M56 72 Q96 48 136 72 L136 120 Q96 144 56 120 Z" stroke="#c8965a" stroke-width="2.5" fill="none"/>
-  <circle cx="96" cy="96" r="10" fill="#c8965a"/>
-  <line x1="96" y1="38" x2="96" y2="54" stroke="#c8965a" stroke-width="2.5"/>
-  <line x1="96" y1="138" x2="96" y2="154" stroke="#c8965a" stroke-width="2.5"/>
+  <rect width="192" height="192" rx="40" fill="#141313"/>
+  <polygon points="96,18 174,96 96,174 18,96" stroke="#debe83" stroke-width="5.5" fill="none"/>
+  <polygon points="96,42 150,96 96,150 42,96" stroke="#debe83" stroke-width="3" fill="none"/>
+  <line x1="96" y1="18"  x2="96" y2="42"  stroke="#debe83" stroke-width="5.5"/>
+  <line x1="96" y1="150" x2="96" y2="174" stroke="#debe83" stroke-width="5.5"/>
+  <line x1="18"  y1="96" x2="42"  y2="96" stroke="#debe83" stroke-width="5.5"/>
+  <line x1="150" y1="96" x2="174" y2="96" stroke="#debe83" stroke-width="5.5"/>
+  <circle cx="96" cy="96" r="12" fill="#debe83"/>
 </svg>
