@@ -3,7 +3,7 @@
 // ── DEFAULT DATA ──────────────────────────────────────────────
 const DEFAULT_DATA = {
   settings: {
-    title: "Bella's Space",
+    title: "cclab",
     tagline: "在實務中學習，在開發中成長",
     theme: "macaron-pink",
     showClock: true,
@@ -382,7 +382,7 @@ function updateBrightnessLabel(val) {
 }
 
 function saveSettings() {
-  state.settings.title        = document.getElementById("set-title").value.trim() || "Bella's Space";
+  state.settings.title        = document.getElementById("set-title").value.trim() || "cclab";
   state.settings.tagline      = document.getElementById("set-tagline").value.trim();
   state.settings.theme        = getActiveThemeId();
   state.settings.showClock    = document.getElementById("set-clock").checked;

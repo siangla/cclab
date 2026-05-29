@@ -1,14 +1,24 @@
 {
-  "name": "Bella's Space",
-  "short_name": "Bella",
-  "description": "個人書籤起始頁",
+  "name": "cclab",
+  "short_name": "cclab",
+  "description": "cclab 個人書籤起始頁",
   "start_url": "./link.html",
   "display": "standalone",
   "background_color": "#1a1612",
   "theme_color": "#1a1612",
   "orientation": "any",
   "icons": [
-    { "src": "icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
-    { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
