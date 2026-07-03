@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>破冰抽籤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161320;
+    --bg-2:#221826;
+    --paper:#f6efe1;
+    --paper-edge:#e9ddc6;
+    --ink:#2b2620;
+    --ink-soft:#6a6253;
+    --vermilion:#d8492f;
+    --vermilion-deep:#b23420;
+    --gold:#d8a44e;
+    --jade:#5f8c72;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:"Noto Sans TC",sans-serif;
+    background:
+      radial-gradient(120% 80% at 50% -10%, #2c2034 0%, transparent 60%),
+      linear-gradient(180deg,var(--bg) 0%,#120f1a 100%);
+    color:var(--paper);
+    min-height:100%;
+    display:flex;justify-content:center;
+    overflow-x:hidden;
+  }
+  .app{
+    width:100%;max-width:440px;min-height:100dvh;
+    padding:26px 22px 34px;
+    display:flex;flex-direction:column;
+    position:relative;
+  }
+  .screen{display:none;flex:1;flex-direction:column;animation:fade .4s ease;}
+  .screen.on{display:flex;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* ---------- header ---------- */
+  .brand{text-align:center;margin-bottom:6px;}
+  .brand .seal{
+    display:inline-block;font-family:"Noto Serif TC",serif;font-weight:900;
+    color:var(--paper);background:var(--vermilion);
+    width:62px;height:62px;line-height:62px;border-radius:10px;
+    font-size:30px;letter-spacing:2px;
+    box-shadow:0 6px 20px rgba(216,73,47,.4);
+    margin-bottom:14px;
+  }
+  .brand h1{
+    font-family:"Noto Serif TC",serif;font-weight:900;
+    font-size:34px;margin:0;letter-spacing:6px;
+  }
+  .brand p{color:#b6ab93;font-size:13px;margin:8px 0 0;letter-spacing:1px;}
+
+  /* ---------- setup ---------- */
+  .panel{
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(216,164,78,.18);
+    border-radius:18px;padding:20px;margin-top:26px;
+  }
+  .row-label{font-size:13px;color:var(--gold);letter-spacing:2px;margin-bottom:12px;font-weight:700;}
+  .stepper{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;}
+  .stepper .ct{font-family:"Noto Serif TC",serif;font-size:26px;font-weight:700;min-width:48px;text-align:center;}
+  .stepper button{
+    width:46px;height:46px;border-radius:12px;border:1px solid rgba(216,164,78,.35);
+    background:transparent;color:var(--gold);font-size:24px;font-weight:700;cursor:pointer;
+  }
+  .stepper button:active{background:rgba(216,164,78,.15);}
+  .names{display:flex;flex-direction:column;gap:10px;}
+  .name-in{display:flex;align-items:center;gap:10px;}
+  .name-in .dot{
+    width:30px;height:30px;flex:none;border-radius:50%;
+    background:var(--vermilion);color:#fff;font-size:14px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;font-family:"Noto Serif TC",serif;
+  }
+  .name-in input{
+    flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    color:var(--paper);border-radius:10px;padding:12px 14px;font-size:16px;font-family:inherit;
+  }
+  .name-in input:focus{outline:none;border-color:var(--gold);}
+
+  .cats{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;}
+  .chip{
+    border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);
+    color:#cfc6b3;padding:9px 15px;border-radius:30px;font-size:14px;cursor:pointer;
+    transition:.15s;user-select:none;
+  }
+  .chip[data-on="1"]{background:var(--gold);color:#2b2113;border-color:var(--gold);font-weight:700;}
+
+  .go{
+    margin-top:24px;width:100%;padding:17px;border:none;border-radius:14px;
+    background:var(--vermilion);color:#fff;font-size:18px;font-weight:700;letter-spacing:6px;
+    font-family:"Noto Serif TC",serif;cursor:pointer;
+    box-shadow:0 8px 24px rgba(216,73,47,.35);
+  }
+  .go:active{transform:translateY(1px);}
+  .go:disabled{opacity:.4;box-shadow:none;}
+
+  /* ---------- play ---------- */
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .topbar .meta{font-size:13px;color:#b6ab93;letter-spacing:1px;}
+  .topbar .reset{
+    background:none;border:1px solid rgba(255,255,255,.18);color:#cfc6b3;
+    border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;
+  }
+  .turn{text-align:center;margin:18px 0 4px;}
+  .turn .k{font-size:13px;color:var(--gold);letter-spacing:4px;}
+  .turn .who{font-family:"Noto Serif TC",serif;font-size:30px;font-weight:900;margin-top:6px;}
+
+  .stage{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;}
+
+  /* fortune slip */
+  .slip{
+    width:100%;max-width:320px;background:var(--paper);color:var(--ink);
+    border-radius:8px;padding:30px 26px 34px;position:relative;
+    box-shadow:0 18px 40px rgba(0,0,0,.45);
+    border:1px solid var(--paper-edge);
+    min-height:340px;display:flex;flex-direction:column;
+  }
+  .slip::before,.slip::after{content:"";position:absolute;left:14px;right:14px;height:1px;background:var(--vermilion);opacity:.35;}
+  .slip::before{top:14px;} .slip::after{bottom:14px;}
+  .slip .stamp{
+    position:absolute;top:18px;right:18px;
+    font-family:"Noto Serif TC",serif;font-weight:900;font-size:15px;
+    color:#fff;background:var(--vermilion);border-radius:6px;
+    padding:6px 9px;letter-spacing:1px;transform:rotate(7deg);
+    box-shadow:0 3px 8px rgba(178,52,32,.4);
+  }
+  .slip .lead{font-family:"Noto Serif TC",serif;color:var(--vermilion-deep);font-size:14px;letter-spacing:6px;margin:6px 0 22px;font-weight:700;}
+  .slip .q{font-family:"Noto Serif TC",serif;font-size:23px;line-height:1.7;font-weight:700;flex:1;}
+  .slip .fate{
+    margin-top:18px;border-top:1px dashed var(--vermilion);padding-top:14px;
+    color:var(--vermilion-deep);font-size:15px;font-weight:700;line-height:1.6;
+  }
+  .slip .fate span{display:block;font-size:12px;letter-spacing:3px;color:var(--gold);margin-bottom:4px;font-weight:700;}
+
+  .slip.reveal{animation:pop .45s cubic-bezier(.2,1.2,.4,1);}
+  @keyframes pop{0%{transform:scale(.8) rotate(-2deg);opacity:0;}100%{transform:none;opacity:1;}}
+
+  .placeholder{
+    width:100%;max-width:320px;min-height:340px;border:2px dashed rgba(216,164,78,.3);
+    border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#7d745f;gap:14px;text-align:center;
+  }
+  .placeholder .tube{font-size:54px;}
+  .placeholder p{margin:0;font-size:15px;letter-spacing:1px;}
+
+  .actions{display:flex;gap:12px;margin-top:24px;}
+  .actions button{flex:1;padding:16px;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:"Noto Serif TC",serif;letter-spacing:3px;}
+  .draw{border:none;background:var(--vermilion);color:#fff;box-shadow:0 8px 22px rgba(216,73,47,.35);}
+  .draw:active{transform:translateY(1px);}
+  .next{border:1px solid rgba(216,164,78,.5);background:transparent;color:var(--gold);}
+  .next:disabled{opacity:.35;}
+  .hidden{display:none !important;}
+
+  @media (prefers-reduced-motion: reduce){
+    .screen,.slip.reveal{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== SETUP ===== -->
+  <section class="screen on" id="setup">
+    <div class="brand">
+      <div class="seal">籤</div>
+      <h1>破冰抽籤</h1>
+      <p>一支手機輪流傳，抽一題、聊一題</p>
+    </div>
+
+    <div class="panel">
+      <div class="row-label">人數</div>
+      <div class="stepper">
+        <button id="minus">－</button>
+        <div class="ct" id="count">4</div>
+        <button id="plus">＋</button>
+      </div>
+      <div class="row-label">取個名字（可留空）</div>
+      <div class="names" id="names"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row-label">想抽哪種籤</div>
+      <div class="cats" id="cats"></div>
+    </div>
+
+    <button class="go" id="start">開　始</button>
+  </section>
+
+  <!-- ===== PLAY ===== -->
+  <section class="screen" id="play">
+    <div class="topbar">
+      <div class="meta" id="meta">第 1 籤</div>
+      <button class="reset" id="reset">重新開始</button>
+    </div>
+
+    <div class="turn">
+      <div class="k">輪到</div>
+      <div class="who" id="who">玩家一</div>
+    </div>
+
+    <div class="stage">
+      <div class="placeholder" id="ph">
+        <div class="tube">🎋</div>
+        <p>按下方「抽籤」，看看抽到什麼</p>
+      </div>
+      <div class="slip hidden" id="slip">
+        <div class="stamp" id="stamp">暖身</div>
+        <div class="lead">破 冰 籤</div>
+        <div class="q" id="q"></div>
+        <div class="fate hidden" id="fate"><span>命運籤</span><div id="fateText"></div></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="draw" id="draw">抽　籤</button>
+      <button class="next" id="next" disabled>換下一位</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const BANK = {
+  warm:{ name:"輕鬆暖身", q:[
+    "最近一首一直重複播放的歌是什麼？","現在手機桌布是什麼？直接拿出來給大家看。",
+    "你早餐最常吃什麼？","假日最理想是睡到幾點？","最近看的一部劇或電影是什麼？",
+    "最喜歡的飲料店和必點品項？","通勤或上學路上你都在做什麼？","最近一次大笑是因為什麼事？",
+    "口袋或包包裡現在有什麼？掏一樣出來。","用一種食物形容你今天的心情。",
+    "最近很想學、但還沒開始的東西是什麼？","你手機裡最多的是哪一類 App？"
+  ]},
+  deep:{ name:"深入認識", q:[
+    "做過最有成就感的一件事是什麼？","有沒有一句你一直記得的話？誰說的？",
+    "你覺得十年前和現在的自己，最大的不同是？","什麼事會讓你立刻覺得跟一個人很合？",
+    "最近一次踏出舒適圈是什麼時候？","只能保留一個現在的習慣，你會留哪個？",
+    "有沒有一個你很感謝、卻還沒好好道謝的人？","你怎麼定義「成功的一天」？",
+    "什麼東西你願意花錢、絕不省？","最近讓你改變想法的一件事是什麼？",
+    "獨處的時候，你最常做什麼？","對你來說「家」是什麼感覺？"
+  ]},
+  fun:{ name:"爆笑時刻", q:[
+    "講一件你做過最糗的事。","你最廢但很自豪的技能是什麼？現場示範一下。",
+    "學一個你最會的動物叫聲。","用最浮誇的方式唸出自己的名字。",
+    "講一個只有你覺得好笑的冷笑話。","友善地模仿一位在場的人。",
+    "相簿往回滑，第 10 張照片是什麼？老實交代。","講一個你小時候信以為真、長大才發現是假的事。",
+    "用三個詞形容自己，其中一個要是吹牛的。","你最不會做的家事是哪一項？",
+    "LINE 裡你最常用的貼圖是哪張？拿出來。","最近一次出糗剛好被人看到，是什麼情況？"
+  ]},
+  what:{ name:"假如人生", q:[
+    "假如明天能變成任何人一天，你想變成誰？","假如一輩子只能再吃一種食物，選什麼？",
+    "假如中了一千萬，第一件事做什麼？","假如能瞬間精通一項技能，你選哪個？",
+    "假如能回到過去某一天，你想回到哪天？","荒島只能帶三樣東西，你帶什麼？",
+    "假如你的人生是一部電影，片名會是什麼？","能跟任何一位歷史人物吃飯，你選誰？",
+    "假如明天全世界放假一天，你會怎麼過？","能擁有一個超能力但有個小缺點，你選什麼？",
+    "假如能對五年前的自己說一句話，你會說什麼？","能變成一種動物過一週，你選什麼？"
+  ]}
+};
+const FATES = [
+  "全體一起回答這一題！","由你左手邊的人替你回答，越離譜越好。",
+  "這題你可以指定一個人來回答。","好運籤！你這回合直接過關。",
+  "先反問下一位一個你想知道的問題，再答自己這題。",
+  "答完後，大家投票你講得夠不夠真心，不夠就再加一題。"
+];
+
+let state={ n:4, names:[], cats:["warm","deep","fun","what"], turn:0, count:0, lastQ:"" };
+
+/* ---- setup rendering ---- */
+const namesBox=document.getElementById("names");
+const catsBox=document.getElementById("cats");
+
+function renderNames(){
+  namesBox.innerHTML="";
+  for(let i=0;i<state.n;i++){
+    const wrap=document.createElement("div");wrap.className="name-in";
+    wrap.innerHTML=`<div class="dot">${i+1}</div>`;
+    const inp=document.createElement("input");
+    inp.placeholder=`玩家${"一二三四五六"[i]}`;
+    inp.value=state.names[i]||"";
+    inp.maxLength=10;
+    inp.oninput=()=>state.names[i]=inp.value;
+    wrap.appendChild(inp);
+    namesBox.appendChild(wrap);
+  }
+}
+function renderCats(){
+  catsBox.innerHTML="";
+  Object.entries(BANK).forEach(([k,v])=>{
+    const c=document.createElement("div");c.className="chip";c.textContent=v.name;
+    c.dataset.on=state.cats.includes(k)?"1":"0";
+    c.onclick=()=>{
+      if(state.cats.includes(k)){
+        if(state.cats.length>1) state.cats=state.cats.filter(x=>x!==k);
+      } else state.cats.push(k);
+      c.dataset.on=state.cats.includes(k)?"1":"0";
+      document.getElementById("start").disabled=state.cats.length===0;
+    };
+    catsBox.appendChild(c);
+  });
+}
+document.getElementById("minus").onclick=()=>{if(state.n>2){state.n--;syncCount();}};
+document.getElementById("plus").onclick=()=>{if(state.n<6){state.n++;syncCount();}};
+function syncCount(){document.getElementById("count").textContent=state.n;renderNames();}
+
+renderNames();renderCats();
+
+/* ---- start ---- */
+document.getElementById("start").onclick=()=>{
+  for(let i=0;i<state.n;i++) if(!state.names[i]) state.names[i]=`玩家${"一二三四五六"[i]}`;
+  state.turn=0;state.count=0;state.lastQ="";
+  show("play");resetSlip();updateTurn();
+};
+document.getElementById("reset").onclick=()=>show("setup");
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  document.getElementById(id).classList.add("on");
+}
+function updateTurn(){
+  document.getElementById("who").textContent=state.names[state.turn];
+  document.getElementById("meta").textContent=`第 ${state.count+1} 籤`;
+}
+
+/* ---- play ---- */
+const slip=document.getElementById("slip"),ph=document.getElementById("ph");
+const drawBtn=document.getElementById("draw"),nextBtn=document.getElementById("next");
+
+function resetSlip(){
+  slip.classList.add("hidden");ph.classList.remove("hidden");
+  drawBtn.disabled=false;nextBtn.disabled=true;
+}
+drawBtn.onclick=()=>{
+  if(navigator.vibrate) navigator.vibrate(18);
+  const pool=[];
+  state.cats.forEach(k=>BANK[k].q.forEach(q=>pool.push({k,q})));
+  let pick;
+  do{ pick=pool[Math.floor(Math.random()*pool.length)]; }
+  while(pool.length>1 && pick.q===state.lastQ);
+  state.lastQ=pick.q;
+
+  document.getElementById("stamp").textContent=BANK[pick.k].name.replace(/輕鬆|時刻|人生|入/g,"").slice(0,2)||"籤";
+  document.getElementById("stamp").textContent={warm:"暖身",deep:"深聊",fun:"爆笑",what:"假如"}[pick.k];
+  document.getElementById("q").textContent=pick.q;
+
+  const fate=document.getElementById("fate");
+  if(Math.random()<0.22){
+    document.getElementById("fateText").textContent=FATES[Math.floor(Math.random()*FATES.length)];
+    fate.classList.remove("hidden");
+  } else fate.classList.add("hidden");
+
+  ph.classList.add("hidden");
+  slip.classList.remove("hidden","reveal");void slip.offsetWidth;slip.classList.add("reveal");
+  drawBtn.disabled=true;nextBtn.disabled=false;
+};
+nextBtn.onclick=()=>{
+  state.count++;
+  state.turn=(state.turn+1)%state.n;
+  resetSlip();updateTurn();
+};
+</script>
+</body>
+</html>
