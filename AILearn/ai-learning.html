@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 全攻略 — 互動自學平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070d1a;--bg2:#0d1829;--surface:#162240;--card:#1a2a4a;--border:#243558;
+  --blue:#3b82f6;--cyan:#22d3ee;--purple:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --fb:'Noto Sans TC',sans-serif;--fm:'Space Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.7;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── NAV ── */
+nav{flex-shrink:0;background:rgba(7,13,26,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;padding:0 20px;gap:24px;position:relative;z-index:10}
+.nav-logo{font-family:var(--fm);font-size:.82rem;font-weight:700;color:var(--cyan);letter-spacing:.06em;white-space:nowrap}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nt{padding:6px 16px;border-radius:8px;font-size:.83rem;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:transparent;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px}
+.nt:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nt.active{background:rgba(59,130,246,.15);color:var(--blue)}
+.nav-prog{margin-left:auto;font-family:var(--fm);font-size:.75rem;color:var(--cyan);white-space:nowrap;flex-shrink:0}
+
+/* ── PAGES ── */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:32px 24px 48px;display:none;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.inner{max-width:1060px;margin:0 auto}
+
+/* ── HERO PAGE ── */
+.hero-wrap{min-height:calc(100vh - 54px);display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
+.hgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.05) 1px,transparent 1px);background-size:56px 56px;animation:gs 18s linear infinite}
+@keyframes gs{to{background-position:56px 56px}}
+.hglow{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.13) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.hero-content{position:relative;z-index:1;padding:40px 20px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:100px;padding:5px 16px;font-size:.72rem;font-family:var(--fm);color:var(--cyan);letter-spacing:.08em;margin-bottom:24px}
+.bdot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+h1.htitle{font-size:clamp(2.6rem,6vw,4.8rem);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin-bottom:16px}
+.htitle .l1{display:block;color:var(--text)}
+.htitle .l2{display:block;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hsub{font-size:.98rem;color:var(--text2);max-width:520px;margin:0 auto 36px}
+.hstats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:36px}
+.hstat{text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px 24px}
+.hsnum{font-size:1.9rem;font-weight:900;color:var(--cyan);font-family:var(--fm)}
+.hslabel{font-size:.75rem;color:var(--text3);margin-top:2px}
+.hbtns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 26px;border-radius:8px;font-family:var(--fb);font-size:.88rem;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .2s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:#2563eb;box-shadow:0 6px 20px rgba(59,130,246,.4);transform:translateY(-2px)}
+.btn-o{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-o:hover{border-color:var(--blue);color:var(--text)}
+
+/* ── SECTION HEADER ── */
+.sec-label{font-family:var(--fm);font-size:.7rem;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase;margin-bottom:8px}
+.sec-title{font-size:clamp(1.5rem,3vw,2rem);font-weight:900;letter-spacing:-.02em;margin-bottom:8px}
+.sec-sub{font-size:.88rem;color:var(--text2);margin-bottom:28px}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:20px}
+.prog-info{flex:1}
+.prog-lbl{font-size:.77rem;color:var(--text2);margin-bottom:6px}
+.prog-track{height:5px;background:var(--surface);border-radius:100px;overflow:hidden}
+.prog-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .5s ease}
+.prog-pct{font-family:var(--fm);font-size:1.3rem;font-weight:700;color:var(--cyan);white-space:nowrap}
+
+/* ── FILTER CHIPS ── */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.chip{padding:6px 16px;border-radius:20px;font-size:.8rem;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--blue);color:var(--text)}
+.chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* ── LESSON GRID ── */
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden}
+.lcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--cyan));transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.lcard:hover{border-color:rgba(59,130,246,.4);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.lcard:hover::before,.lcard.done::before{transform:scaleX(1)}
+.lcard.done{border-color:rgba(52,211,153,.25)}.lcard.done::before{background:linear-gradient(90deg,var(--green),#6ee7b7)}
+.cmeta{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ctag{font-family:var(--fm);font-size:.67rem;letter-spacing:.06em;padding:3px 9px;border-radius:100px;color:var(--blue);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2)}
+.ctag.arch{color:var(--purple);background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.2)}
+.ctag.extra{color:var(--amber);background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.2)}
+.ccheck{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .2s}
+.lcard.done .ccheck{background:var(--green);border-color:var(--green);color:#fff}
+.cicon{font-size:1.9rem;margin-bottom:8px}
+.ctitle{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:5px}
+.cdesc{font-size:.8rem;color:var(--text2);line-height:1.6}
+.ctime{font-family:var(--fm);font-size:.7rem;color:var(--text3);margin-top:12px}
+
+/* ── MODAL ── */
+.moverlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s}
+.moverlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:18px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;transform:translateY(20px) scale(.97);transition:transform .28s;position:relative}
+.moverlay.open .modal{transform:translateY(0) scale(1)}
+.mhead{padding:24px 28px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mtitle{font-size:1.2rem;font-weight:800;line-height:1.3}
+.mclose{width:30px;height:30px;border-radius:7px;background:var(--surface);border:none;color:var(--text2);font-size:1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mclose:hover{background:var(--border);color:var(--text)}
+.mbody{padding:24px 28px}
+.msec{margin-bottom:28px}
+.msec h3{font-size:.7rem;font-family:var(--fm);letter-spacing:.1em;color:var(--cyan);text-transform:uppercase;margin-bottom:12px}
+.cbox{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-left:4px solid var(--blue);border-radius:0 10px 10px 0;padding:14px 18px;font-size:.88rem;color:var(--text);line-height:1.7;margin-bottom:12px}
+.cbox.gr{background:rgba(52,211,153,.07);border-left-color:var(--green);border-color:rgba(52,211,153,.2)}
+.cbox.am{background:rgba(251,191,36,.07);border-left-color:var(--amber);border-color:rgba(251,191,36,.2)}
+.acard{background:var(--surface);border-radius:11px;padding:16px;display:flex;gap:14px}
+.aicon{font-size:1.8rem;flex-shrink:0}
+.atxt{font-size:.86rem;color:var(--text2);line-height:1.7}
+.atxt strong{color:var(--text)}
+.kpts{list-style:none;display:flex;flex-direction:column;gap:8px}
+.kpts li{display:flex;gap:10px;align-items:flex-start;font-size:.87rem;color:var(--text2)}
+.kpts li::before{content:'▸';color:var(--blue);font-size:.78rem;margin-top:3px;flex-shrink:0}
+.quiz-area{background:var(--surface);border-radius:12px;padding:20px}
+.quiz-q{font-size:.92rem;font-weight:600;margin-bottom:14px}
+.quiz-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.qopt{padding:11px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:.85rem;color:var(--text2);cursor:pointer;transition:all .13s;text-align:left}
+.qopt:hover:not(:disabled){border-color:var(--blue);color:var(--text)}
+.qopt.correct{background:rgba(52,211,153,.1);border-color:var(--green);color:var(--green)}
+.qopt.wrong{background:rgba(248,113,113,.1);border-color:var(--red);color:var(--red)}
+.qopt:disabled{cursor:default}
+.qfb{font-size:.83rem;padding:10px 14px;border-radius:8px;display:none}
+.qfb.show{display:block}.qfb.good{background:rgba(52,211,153,.1);color:var(--green)}.qfb.bad{background:rgba(248,113,113,.1);color:var(--red)}
+.mfoot{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.btn-mark{padding:9px 22px;border-radius:8px;font-size:.86rem;font-weight:600;background:var(--green);color:#000;border:none;cursor:pointer;transition:all .2s}
+.btn-mark:hover{background:#6ee7b7}
+.btn-mark.marked{background:var(--surface);color:var(--text2)}.btn-mark.marked:hover{background:var(--border)}
+
+/* ── GLOSSARY ── */
+.gsearch{display:flex;gap:10px;margin-bottom:20px}
+.ginput{flex:1;padding:10px 16px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:var(--fb);font-size:.88rem;outline:none;transition:border-color .2s}
+.ginput:focus{border-color:var(--blue)}.ginput::placeholder{color:var(--text3)}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.gcard{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px 18px;transition:border-color .2s}
+.gcard:hover{border-color:rgba(59,130,246,.35)}
+.gterm{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px}
+.gen{font-family:var(--fm);font-size:.7rem;color:var(--cyan);margin-bottom:7px}
+.gdef{font-size:.8rem;color:var(--text2);line-height:1.6}
+.gcat{display:inline-block;margin-top:9px;font-size:.66rem;font-family:var(--fm);letter-spacing:.06em;padding:2px 8px;border-radius:100px}
+
+/* ── TIMELINE ── */
+.tl{position:relative;padding-left:28px;max-width:760px}
+.tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--blue),var(--purple),var(--cyan))}
+.tli{position:relative;margin-bottom:32px}
+.tldot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:3px solid var(--blue);box-shadow:0 0 8px rgba(59,130,246,.4)}
+.tlyear{font-family:var(--fm);font-size:.72rem;color:var(--cyan);margin-bottom:3px}
+.tltitle{font-size:.95rem;font-weight:700;margin-bottom:5px}
+.tldesc{font-size:.82rem;color:var(--text2);line-height:1.6}
+
+/* ── ARCH ── */
+.arch-stack{display:flex;flex-direction:column;gap:4px;max-width:860px}
+.alayer{border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:18px;border:1px solid transparent}
+.anum{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:.78rem;font-weight:700;flex-shrink:0}
+.acontent{flex:1}
+.atitle{font-size:.92rem;font-weight:700;margin-bottom:3px}
+.atags{display:flex;gap:5px;flex-wrap:wrap}
+.atag{font-size:.67rem;padding:2px 8px;border-radius:100px;background:rgba(255,255,255,.06);color:var(--text2)}
+.aarrow{text-align:center;color:var(--text3);padding:2px 0;font-size:1rem}
+.ld{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.2)}.ld .anum{background:rgba(59,130,246,.2);color:var(--blue)}
+.lm{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.2)}.lm .anum{background:rgba(167,139,250,.2);color:var(--purple)}
+.li{background:rgba(34,211,238,.07);border-color:rgba(34,211,238,.2)}.li .anum{background:rgba(34,211,238,.2);color:var(--cyan)}
+.la{background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.2)}.la .anum{background:rgba(52,211,153,.2);color:var(--green)}
+
+/* ── TOOLS ── */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px;transition:all .2s}
+.tcard:hover{border-color:rgba(59,130,246,.35);transform:translateY(-2px)}
+.temoji{font-size:1.7rem;margin-bottom:9px}
+.tname{font-size:.92rem;font-weight:700;margin-bottom:3px}
+.turl{font-family:var(--fm);font-size:.68rem;color:var(--cyan);margin-bottom:7px}
+.tdesc{font-size:.78rem;color:var(--text2);line-height:1.5}
+.ttag{display:inline-block;margin-top:9px;font-size:.66rem;padding:2px 8px;border-radius:100px;background:rgba(59,130,246,.1);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:.9rem}
+
+@media(max-width:600px){
+  .nav-logo{display:none}
+  .mbody,.mhead,.mfoot{padding-left:16px;padding-right:16px}
+  .hstats{gap:12px}.hstat{padding:10px 16px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">AI // LEARN</div>
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="nt active" data-page="home">🏠 首頁</button>
+    <button class="nt" data-page="intro">📘 AI 入門</button>
+    <button class="nt" data-page="arch">🏗️ 技術架構</button>
+    <button class="nt" data-page="extra">🌐 延伸知識</button>
+    <button class="nt" data-page="glossary">📖 術語表</button>
+    <button class="nt" data-page="history">📅 發展史</button>
+    <button class="nt" data-page="arch-diagram">🔷 架構圖</button>
+    <button class="nt" data-page="tools">🛠️ 工具</button>
+  </div>
+  <div class="nav-prog" id="nav-prog">0 / 24</div>
+</nav>
+
+<div class="pages">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="hero-wrap">
+      <div class="hgrid"></div>
+      <div class="hglow"></div>
+      <div class="hero-content">
+        <div class="badge"><span class="bdot"></span>互動自學平台 v2.0</div>
+        <h1 class="htitle">
+          <span class="l1">AI 全攻略</span>
+          <span class="l2">從入門到架構</span>
+        </h1>
+        <p class="hsub">整合入門概念 × 技術架構 × 核心術語 × 發展歷程<br>按照自己的節奏，系統性掌握 AI 知識。</p>
+        <div class="hstats">
+          <div class="hstat"><div class="hsnum">24</div><div class="hslabel">學習單元</div></div>
+          <div class="hstat"><div class="hsnum" id="done-hero">0</div><div class="hslabel">已完成</div></div>
+          <div class="hstat"><div class="hsnum">71</div><div class="hslabel">核心術語</div></div>
+          <div class="hstat"><div class="hsnum">4</div><div class="hslabel">架構層次</div></div>
+        </div>
+        <div class="hbtns">
+          <button class="btn btn-p" onclick="goPage('intro')">▶ 開始學習</button>
+          <button class="btn btn-o" onclick="goPage('arch-diagram')">查看架構圖</button>
+          <button class="btn btn-o" onclick="goPage('glossary')">術語速查</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div class="page" id="page-intro">
+    <div class="inner">
+      <div class="sec-label">Module 1 · AI Fundamentals</div>
+      <h2 class="sec-title">AI 入門</h2>
+      <p class="sec-sub">從零開始理解人工智慧的本質、學習方式與生活應用。</p>
+      <div class="prog-bar">
+        <div class="prog-info">
+          <div class="prog-lbl">本章進度 <span id="intro-done">0</span> / <span id="intro-total">0</span></div>
+          <div class="prog-track"><div class="prog-fill" id="intro-fill" style="width:0%"></div></div>
+        </div>
+        <div class="prog-pct" id="intro-pct">0%</div>
+      </div>
+      <div class="lgrid" id="grid-intro"></div>
+    </div>
+  </div>
+
+  <!-- ARCH -->
+  <div class="page" id="page-arch">
+    <div class="inner">
+      <div class="sec-label">Module 2 · Technical Architecture</div>
+      <h2 class="sec-title">技術架構</h2>
+      <p class="sec-sub">深入了解 AI 系統各層次的技術原理與設計模式。</p>
+      <div class="prog-bar">
+        <div class="prog-info">
+          <div class="prog-lbl">本章進度 <span id="arch-done">0</span> / <span id="arch-total">0</span></div>
+          <div class="prog-track"><div class="prog-fill" id="arch-fill" style="width:0%"></div></div>
+        </div>
+        <div class="prog-pct" id="arch-pct">0%</div>
+      </div>
+      <div class="lgrid" id="grid-arch"></div>
+    </div>
+  </div>
+
+  <!-- EXTRA -->
+  <div class="page" id="page-extra">
+    <div class="inner">
+      <div class="sec-label">Module 3 · Extended Knowledge</div>
+      <h2 class="sec-title">延伸知識</h2>
+      <p class="sec-sub">AI 安全、商業應用、全球格局與實務落地的進階主題。</p>
+      <div class="prog-bar">
+        <div class="prog-info">
+          <div class="prog-lbl">本章進度 <span id="extra-done">0</span> / <span id="extra-total">0</span></div>
+          <div class="prog-track"><div class="prog-fill" id="extra-fill" style="width:0%"></div></div>
+        </div>
+        <div class="prog-pct" id="extra-pct">0%</div>
+      </div>
+      <div class="lgrid" id="grid-extra"></div>
+    </div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="page" id="page-glossary">
+    <div class="inner">
+      <div class="sec-label">Reference · Glossary</div>
+      <h2 class="sec-title">術語速查表</h2>
+      <p class="sec-sub">AI 常見術語中英對照，即時搜尋。共 <span id="gloss-count">0</span> 個詞條。</p>
+      <div class="gsearch">
+        <input class="ginput" id="ginput" placeholder="搜尋術語，例如：RAG、Token、幻覺、Transformer…" oninput="filterGloss()">
+      </div>
+      <div class="ggrid" id="ggrid"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="inner">
+      <div class="sec-label">Reference · History</div>
+      <h2 class="sec-title">AI 發展史</h2>
+      <p class="sec-sub">從 1950 年代到 2025 年，AI 走過的關鍵里程碑。</p>
+      <div class="tl" id="tl"></div>
+    </div>
+  </div>
+
+  <!-- ARCH DIAGRAM -->
+  <div class="page" id="page-arch-diagram">
+    <div class="inner">
+      <div class="sec-label">Reference · Architecture</div>
+      <h2 class="sec-title">AI 系統架構圖</h2>
+      <p class="sec-sub">一個完整的 AI 系統由四大層次組成，由底層資料到上層應用，環環相扣。</p>
+      <div class="arch-stack" id="arch-stack"></div>
+    </div>
+  </div>
+
+  <!-- TOOLS -->
+  <div class="page" id="page-tools">
+    <div class="inner">
+      <div class="sec-label">Reference · Tools</div>
+      <h2 class="sec-title">推薦工具一覽</h2>
+      <p class="sec-sub">馬上可以用的 AI 工具，完全不需要技術背景。</p>
+      <div class="tgrid" id="tgrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="moverlay" onclick="closeBg(event)">
+  <div class="modal" id="modal">
+    <div class="mhead">
+      <div>
+        <div id="m-tag" style="margin-bottom:7px"></div>
+        <div class="mtitle" id="m-title"></div>
+      </div>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody" id="m-body"></div>
+    <div class="mfoot">
+      <span style="font-size:.78rem;color:var(--text3)" id="m-time"></span>
+      <button class="btn-mark" id="btn-mark" onclick="markDone()">✓ 標記完成</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const LESSONS = [
+  // ── AI 入門 ──
+  {id:'l1',f:'intro',icon:'🧠',tag:'AI 入門',title:'什麼是 AI？',time:'約 5 分鐘',desc:'用最直觀的方式理解人工智慧的本質與三大感知能力。',
+   c:{core:'人工智慧（AI）是讓電腦「透過大量資料學習，模仿人類思考與判斷」的技術。它不是被人類一條一條寫好答案的程式，而是從資料中自己找出規律。',
+    ana:{i:'🐱',t:'<strong>貓咪辨識比喻：</strong>把一萬張「這是貓」的照片給小孩看，他就能認出貓。AI 也是這樣學習的，差別是 AI 可以在幾小時內「看完」一億張照片，速度比人類快幾百萬倍。'},
+    pts:['AI 的三種感知：看（圖片辨識）、聽（語音理解）、說（文字生成）','AI 不是科幻電影的機器人，它是一個不斷從資料中學習的程式','手機裡的 Siri、人臉解鎖、垃圾郵件過濾，都是 AI 的應用'],
+    q:{q:'以下哪個最能說明 AI 學習的本質？',o:['人類把所有答案預先寫進去','AI 從大量範例資料中自動找出規律','AI 連上網路即時查詢答案','AI 使用固定的數學公式計算'],a:1,e:'正確！AI 的核心是「從資料中學習規律」，而不是人類預先寫好答案，這是機器學習與傳統程式設計最大的差別。'}}},
+  {id:'l2',f:'intro',icon:'⚙️',tag:'AI 入門',title:'AI 怎麼學習？',time:'約 6 分鐘',desc:'機器學習的三個核心步驟：收集、找規律、修正。',
+   c:{core:'機器學習（Machine Learning）是現代 AI 的核心技術。訓練過程分三步：收集大量資料範例、讓模型從中找出規律、根據錯誤不斷調整參數，直到準確率夠高。',
+    ana:{i:'📝',t:'<strong>備考類比：</strong>就像學生備考，先大量刷題（資料），找出題目規律，做錯了對答案再修正——反覆循環直到考試能過關。AI 的流程完全相同，只是速度快幾百萬倍。'},
+    pts:['步驟 1：資料收集——文字、圖片、聲音等範例','步驟 2：找出規律——哪些特徵對應哪些答案','步驟 3：不斷修正——答錯了就調整「參數」','一個 LLM 訓練時讀的文字量，相當於幾千億個網頁'],
+    q:{q:'機器學習中，「答錯了就調整」的目的是什麼？',o:['讓 AI 重新收集更多資料','透過反覆修正參數提升準確率','讓 AI 學習更快的計算方法','刪除錯誤的訓練資料'],a:1,e:'正確！這個反覆修正的過程叫「梯度下降（Gradient Descent）」，是機器學習最核心的優化機制。'}}},
+  {id:'l3',f:'intro',icon:'📱',tag:'AI 入門',title:'生活中的 AI',time:'約 4 分鐘',desc:'你每天都在使用的六大 AI 應用場景一次看清楚。',
+   c:{core:'AI 不是未來，它已經存在你口袋裡的手機中。從音樂推薦到垃圾郵件過濾，這些功能背後都有共同點：它們根據你的行為「學習」你的偏好，並持續優化結果。',
+    ana:{i:'🎯',t:'<strong>今天用了幾個？</strong>Google Map 導航（預測路況）、YouTube 推薦（猜你喜歡）、Gmail 過濾（分辨垃圾信）、iPhone 人臉辨識（解鎖）、DeepL 翻譯、蝦皮「猜你喜歡」——這六個你今天用了幾個？'},
+    pts:['音樂/影片推薦：根據收聽/觀看習慣預測喜好','垃圾郵件：分析 Email 特徵判斷是否為廣告','導航預測：根據歷史路況資料預測行車時間','人臉辨識：從數千張照片學習你的臉部特徵'],
+    q:{q:'為什麼 YouTube 的推薦越用越「準」？',o:['YouTube 員工人工挑選影片','AI 根據你的觀看行為持續學習並調整','YouTube 隨機顯示熱門影片','AI 根據你的年齡性別推薦'],a:1,e:'正確！這叫「協同過濾（Collaborative Filtering）」——AI 分析你的觀看歷史，結合同類型用戶行為，預測你最可能喜歡的內容。'}}},
+  {id:'l4',f:'intro',icon:'🎯',tag:'AI 入門',title:'AI 的三個等級',time:'約 5 分鐘',desc:'窄域 AI、通用 AGI、超級 ASI——我們現在在哪？',
+   c:{core:'目前所有商業 AI 都是「窄域 AI」——在特定領域表現極佳，但換個任務就完全不行。通用 AI（AGI）是研究目標，尚未達成。超級 AI（ASI）目前只存在理論與科幻中。',
+    ana:{i:'🏆',t:'<strong>棋王比喻：</strong>AlphaGo 下圍棋比任何人類強，但讓它開車或寫 Email 就完全不行——這就是窄域 AI 的特性。別被媒體誇大報導誤導——現在沒有任何 AI 是「全能」的。'},
+    pts:['窄域 AI（Narrow AI）：現在的所有 AI，一個任務做到極致','通用 AI（AGI）：像人類能處理任何任務，研究目標未達成','超級 AI（ASI）：各方面超越人類，目前僅存在理論','ChatGPT 很強，但它換個任務領域就可能失靈'],
+    q:{q:'ChatGPT 屬於哪種 AI 等級？',o:['通用 AI（AGI）','超級 AI（ASI）','窄域 AI（Narrow AI）','混合 AI'],a:2,e:'正確！ChatGPT 是窄域 AI，它非常擅長語言任務，但並不是通用智能，它不能開車、不能做手術、也不能真正「理解」事物。'}}},
+  {id:'l5',f:'intro',icon:'✨',tag:'AI 入門',title:'生成式 AI',time:'約 6 分鐘',desc:'從「分析」到「創造」——生成式 AI 的質的飛躍。',
+   c:{core:'過去的 AI 主要做「分類」與「預測」，例如判斷照片是不是貓。生成式 AI 是質的飛躍——它能創造出原本不存在的內容：文字、圖片、程式碼、影片、音樂。',
+    ana:{i:'🎨',t:'<strong>核心原理：</strong>生成式 AI 的本質是「預測下一個最可能的 Token」。它不是真的「懂」，而是從海量內容中學到了人類語言和視覺的統計規律，這也是為什麼它偶爾會說出錯誤資訊（幻覺）。'},
+    pts:['ChatGPT / Claude：對話、寫文章、分析文件','Midjourney / DALL-E：文字描述生成圖片','GitHub Copilot：AI 自動補全程式碼','Sora / Runway：文字或圖片生成影片','Suno / Udio：AI 作曲與歌聲合成'],
+    q:{q:'生成式 AI 和傳統 AI 最大的差別是什麼？',o:['生成式 AI 速度更快','生成式 AI 能創造新內容，不只是分類或預測','生成式 AI 不需要資料訓練','生成式 AI 只能處理文字'],a:1,e:'正確！生成式 AI 的核心突破是從「辨識/分類」進化到「創作/生成」，能夠產出原本不存在的內容。'}}},
+  {id:'l6',f:'intro',icon:'⚠️',tag:'AI 入門',title:'機會與風險',time:'約 5 分鐘',desc:'AI 能幫你做什麼？有哪些地方需要小心？',
+   c:{core:'AI 是工具，像電力或網路一樣。它有強大的地方，也有明確的限制。理解能力邊界，才能善用而不被誤導。',
+    ana:{i:'⚖️',t:'<strong>幻覺現象（Hallucination）：</strong>AI 會非常自信地說出根本不存在的「事實」，例如捏造論文引用或不存在的法律條文。重要資訊務必交叉驗證，不要完全依賴 AI 回答。'},
+    pts:['✅ 節省重複性工作（整理、摘要、翻譯）','✅ 快速分析大量資料，找出規律','✅ 協助寫作、程式碼、創意發想','⚠️ 幻覺現象：AI 可能自信地說出錯誤資訊','⚠️ 隱私風險：不要把機密資料丟進公開 AI','⚠️ 需要人類判斷，不能完全依賴'],
+    q:{q:'什麼是 AI「幻覺（Hallucination）」？',o:['AI 出現視覺錯誤的現象','AI 自信地輸出不存在或錯誤的資訊','AI 速度變慢的現象','AI 拒絕回答問題'],a:1,e:'正確！幻覺是目前 LLM 最大的挑戰。AI 不是在「查詢事實」，而是在「預測最可能的內容」，所以有時候會生成聽起來合理但完全錯誤的資訊。'}}},
+  {id:'l7',f:'intro',icon:'🗣️',tag:'AI 入門',title:'AI 如何理解語言？',time:'約 6 分鐘',desc:'從文字到向量——AI 是怎麼「讀懂」你說的話的？',
+   c:{core:'AI 沒辦法直接理解文字，它只看得懂數字。因此每個詞都會先被轉換成「向量（Embedding）」——一串幾百到幾千個數字，代表這個詞的語意位置。意思相近的詞，在向量空間中距離也更近。',
+    ana:{i:'🗺️',t:'<strong>地圖比喻：</strong>想像所有詞彙都在一張巨大的地圖上，「貓」和「狗」住得很近（都是寵物），「國王」和「王后」也住得很近（都是皇室）。AI 透過計算這些距離來理解詞義關係。這就是 Embedding 的核心思想。'},
+    pts:['Tokenization：文字先被切成 Token（最小單位）','Embedding：每個 Token 被轉換成高維度數字向量','語意相似性：「蘋果」和「水果」的向量距離比「蘋果」和「電腦」更近','上下文理解：Transformer 讓每個詞的向量受到周圍詞影響而動態調整'],
+    q:{q:'為什麼「國王 − 男人 + 女人 ≈ 王后」這個向量計算能成立？',o:['這只是巧合','Embedding 將語意關係編碼進向量空間，讓語意運算成為可能','AI 特別記住了這個等式','這個計算其實不成立'],a:1,e:'正確！Embedding 把語意關係（性別、階級）編碼成向量方向，所以「國王向量 − 男性向量 + 女性向量」的結果確實非常接近「王后向量」。'}}},
+  {id:'l8',f:'intro',icon:'🏭',tag:'AI 入門',title:'製造業的 AI 應用',time:'約 6 分鐘',desc:'工廠、ERP、供應鏈——AI 怎麼改變製造業？',
+   c:{core:'製造業是 AI 落地最快的產業之一。從品質檢測到預測維護，從供應鏈優化到智慧排程，AI 正在重塑整個製造流程。對於導入 ERP 與 MES 的工廠，AI 的整合點非常具體且 ROI 清晰。',
+    ana:{i:'🔧',t:'<strong>老師傅的經驗：</strong>過去工廠依賴老師傅的「直覺」判斷機台要換零件了、這批料可能有問題。AI 做的事就是把這些隱性經驗轉成數據模型，讓經驗可以被複製、擴展、24 小時不間斷運作。'},
+    pts:['視覺品質檢測：AOI 用 AI 取代人工目檢，準確率更高、速度更快','預測維護：感測器資料 + AI 預測機器故障時間，避免非計劃停機','智慧排程：AI 根據訂單、庫存、產能自動排生產計畫','供應鏈預測：AI 預測需求波動，自動調整採購建議','發票與文件自動化：OCR + AI 自動比對採購單、發票、驗收單（三方比對）'],
+    q:{q:'在製造業，「預測維護（Predictive Maintenance）」最主要解決什麼問題？',o:['降低人員薪資成本','在機器故障前預測並安排維修，避免非計劃停機損失','讓工廠自動化程度達到 100%','取代 ERP 系統的功能'],a:1,e:'正確！非計劃停機是製造業最昂貴的成本之一。預測維護透過分析機器感測器資料，在故障發生前幾天就發出警告，讓維修可以提前計劃。'}}},
+
+  // ── 技術架構 ──
+  {id:'a1',f:'arch',icon:'📊',tag:'技術架構',title:'資料層 — AI 的燃料',time:'約 7 分鐘',desc:'資料品質決定模型上限：收集、清洗、標注、儲存。',
+   c:{core:'「垃圾進，垃圾出（Garbage In, Garbage Out）」——這是 AI 業界最重要的格言。資料品質是 AI 成功最關鍵、也最容易被低估的因素。AI 專案 80% 的時間通常花在資料處理上。',
+    ana:{i:'🏭',t:'<strong>工廠原料比喻：</strong>再精密的生產設備，原料品質不好就做不出好產品。AI 模型就是生產設備，資料就是原料。原料不純，再怎麼訓練也是白費功夫。'},
+    pts:['資料收集：網頁爬取、API 串接、人工標注、合成資料','資料清洗：去重複、格式統一、異常值處理','資料標注：分類標籤、邊框框選、語意標記——通常需要大量人工','向量資料庫：儲存語意向量，支援語意搜尋（非關鍵字比對）','版本控制：像程式碼一樣管理資料集的版本變化'],
+    q:{q:'在 AI 專案中，資料處理通常佔多少比例的工作量？',o:['約 20%','約 50%','約 80%','約 95%'],a:2,e:'正確！業界公認 AI 專案有 80% 的時間花在資料收集、清洗和標注上，只有 20% 才是模型訓練和調優。'}}},
+  {id:'a2',f:'arch',icon:'🧬',tag:'技術架構',title:'模型層 — AI 的大腦',time:'約 8 分鐘',desc:'LLM、預訓練、Fine-tuning、RLHF——模型是怎麼煉成的？',
+   c:{core:'模型層是 AI 的核心智能所在。現代 LLM（大型語言模型）的基礎是 Transformer 架構，透過「注意力機制」理解文字之間的複雜關係。訓練分四個階段：預訓練→微調→RLHF→評估。',
+    ana:{i:'🎓',t:'<strong>訓練比喻：</strong>預訓練像是念完大學（海量知識）；Fine-tuning 像是考研究所（專精特定領域）；RLHF 像是實習期間由導師糾正行為（對齊人類偏好）。'},
+    pts:['預訓練（Pre-training）：海量資料，學習通用知識，需巨大算力','監督微調（SFT）：高品質對話資料，讓模型學會「如何回答」','RLHF：人類評分員打分，讓 AI 對齊人類偏好','Fine-tuning：用少量特定資料讓通用模型專精某任務','多數企業不需要自訓練，使用 API 呼叫現成模型即可'],
+    q:{q:'RLHF 解決了什麼問題？',o:['加快訓練速度','讓 AI 對齊人類偏好，使回答更有幫助','提升模型準確率','使用歷史資料學習'],a:1,e:'正確！RLHF（人類回饋強化學習）是讓 AI 從自信但錯誤，變成謙遜且有幫助的關鍵技術。ChatGPT 說話方式自然，很大程度就靠 RLHF。'}}},
+  {id:'a3',f:'arch',icon:'🔍',tag:'技術架構',title:'RAG — 讓 AI 查資料再回答',time:'約 7 分鐘',desc:'解決幻覺與知識過時問題的最重要企業 AI 技術。',
+   c:{core:'RAG（Retrieval-Augmented Generation，檢索增強生成）讓 AI 在回答前先查詢外部資料庫，再根據查到的內容生成答案。解決了兩個核心問題：1）模型不知道公司內部資訊；2）訓練資料有截止日期。',
+    ana:{i:'📚',t:'<strong>開卷考試比喻：</strong>傳統 AI 是「閉卷考試」——只能靠訓練時記住的知識作答。RAG 讓 AI 變成「開卷考試」——可以在回答時翻查指定的書籍（知識庫），答案更準確也可以引用來源。'},
+    pts:['步驟 1：將問題轉成 Embedding 向量','步驟 2：在向量資料庫中搜尋最相關的文件片段','步驟 3：將相關文件注入 Prompt（上下文）','步驟 4：模型根據文件內容生成有來源的回答','企業應用：讓 AI 查採購記錄、SOP 文件、內部報表再回答'],
+    q:{q:'RAG 最主要解決的問題是什麼？',o:['讓 AI 回答速度更快','讓 AI 能查詢外部知識庫，解決幻覺與知識過時問題','讓 AI 模型體積更小','讓 AI 能夠生成圖片'],a:1,e:'正確！RAG 的核心價值是讓 AI 能夠「查自己公司的資料再回答」，大幅降低幻覺並讓回答可以引用來源。'}}},
+  {id:'a4',f:'arch',icon:'🤖',tag:'技術架構',title:'AI Agent — 自主規劃執行',time:'約 8 分鐘',desc:'從「回答問題」到「規劃並完成多步驟任務」的進化。',
+   c:{core:'AI Agent 是能夠「自主規劃、決策、執行一系列步驟以達成目標」的 AI 系統。它不只是問一句答一句，而是能接收一個高階目標，自己拆解成子任務並依序完成。',
+    ana:{i:'🎭',t:'<strong>助理比喻：</strong>傳統 AI 是「打字機」——你說一句它做一句。Agent 是「私人助理」——你說「幫我安排下週的出差」，它自己查日曆、訂機票、訂飯店、準備文件，全程自動完成。'},
+    pts:['記憶（Memory）：短期對話歷史 + 長期向量資料庫儲存','規劃（Planning）：Chain-of-Thought，將目標分解成小步驟','工具（Tools）：搜尋引擎、API、程式碼執行、資料庫查詢','行動（Action）：呼叫工具執行，觀察結果，調整計劃','框架：LangGraph、AutoGen、CrewAI、Dify'],
+    q:{q:'以下哪個場景最能展示 AI Agent 的能力？',o:['AI 回答「2+2=?」','AI 翻譯一段英文','AI 自動分析銷售報表、找出前三客戶、起草 Email 並排程','AI 生成一張貓咪的圖片'],a:2,e:'正確！AI Agent 的核心是「多步驟自主執行」——它需要查資料庫、分析、撰寫、呼叫外部 API，這是傳統 AI 問答做不到的。'}}},
+  {id:'a5',f:'arch',icon:'🏢',tag:'技術架構',title:'企業 AI 整合架構',time:'約 8 分鐘',desc:'四層框架：從 AI 模型到 ERP/MES 的完整連接路徑。',
+   c:{core:'企業導入 AI 需要清晰的四層架構：使用者介面層、AI Agent 應用層、整合中介層、企業系統層。每層都有獨立職責，透過標準介面溝通，讓系統容易維護和擴展。',
+    ana:{i:'🏗️',t:'<strong>大樓比喻：</strong>L4 是大廳入口（使用者看到的），L3 是管理中心（AI 邏輯），L2 是電力/水管系統（整合中介），L1 是地基（核心系統）。每層各司其職，才能穩定運作。'},
+    pts:['L4 使用者介面層：Web App、ChatBot、Dashboard、API 端點','L3 AI Agent 應用層：Orchestration、Tool Calling、RAG 管線','L2 整合中介層：MCP Server、API Gateway、Kafka 訊息佇列','L1 企業系統層：ERP（JDE/SAP）、MES、資料庫、外部 API','MCP（Model Context Protocol）：AI 連接工具的開放標準，如同 USB 統一接口'],
+    q:{q:'MCP（Model Context Protocol）的主要作用是什麼？',o:['讓 AI 模型訓練更快','提供 AI 與外部工具安全連接的標準協定','壓縮 AI 模型的大小','讓 AI 能夠生成更長的文字'],a:1,e:'正確！MCP 是 Anthropic 提出的開放標準，就像 USB 統一了裝置連接標準，MCP 統一了 AI 的工具連接標準。'}}},
+  {id:'a6',f:'arch',icon:'⚡',tag:'技術架構',title:'Transformer 與注意力機制',time:'約 8 分鐘',desc:'現代 LLM 的核心架構是如何運作的？',
+   c:{core:'Transformer 是 2017 年 Google 提出的架構，透過「注意力機制（Attention Mechanism）」讓模型能夠同時考慮輸入文字中所有詞彙之間的關係。這是 GPT、Claude、Llama 等所有現代 LLM 的基礎。',
+    ana:{i:'🎸',t:'<strong>樂團比喻：</strong>舊架構（RNN）像是樂手一個一個輪流演奏——後面的人只聽得到前一個人。Transformer 像是整個樂團同時演奏，每個樂手都能聽到其他所有人，協調出更豐富的和聲。'},
+    pts:['注意力機制：讓模型計算每個詞對其他詞的「重要程度」','Self-Attention：模型對自己的輸入計算相互關注程度','Multi-Head Attention：同時從多個角度計算注意力','位置編碼（Positional Encoding）：告訴模型詞的順序','2017 論文「Attention Is All You Need」開啟 LLM 時代'],
+    q:{q:'Transformer 架構相比舊的 RNN 架構最大的優勢是什麼？',o:['參數數量更少','能夠並行計算所有詞彙間的關係（不需逐字處理）','訓練速度快 10 倍','不需要 GPU 就能訓練'],a:1,e:'正確！Transformer 的革命性在於「並行計算」——所有詞彙的注意力分數可以同時計算，而 RNN 必須按順序逐字處理。'}}},
+  {id:'a7',f:'arch',icon:'🔄',tag:'技術架構',title:'Fine-tuning vs RAG 怎麼選？',time:'約 7 分鐘',desc:'兩種讓 AI 學習專業知識的方法，各自適用什麼場景？',
+   c:{core:'Fine-tuning 和 RAG 都能讓通用 AI 具備特定領域知識，但機制完全不同。Fine-tuning 是「把知識燒進模型」，RAG 是「讓模型查書再回答」。選錯方法會浪費大量時間和金錢。',
+    ana:{i:'📖',t:'<strong>背書 vs 開卷考：</strong>Fine-tuning 像是把所有資料背下來（閉卷）；RAG 像是帶著筆記本去考試（開卷）。當資料常常更新、或需要引用來源時，開卷（RAG）更合適；當你要改變說話風格或行為模式時，背書（Fine-tuning）更有效。'},
+    pts:['選 RAG 的情境：知識需要頻繁更新、需要標註資料來源、資料量大且多樣','選 Fine-tuning 的情境：想改變模型語氣/格式、特定任務需要極高準確率','成本比較：RAG 實作快（數天），Fine-tuning 需要標注資料和訓練時間（數週）','可以結合使用：Fine-tuning 調整行為風格，RAG 補充即時知識','常見誤區：以為 Fine-tuning 就能「教會」模型新知識——其實 RAG 更適合知識注入'],
+    q:{q:'你想讓 AI 客服機器人知道公司最新的產品規格（每週更新），應該用哪種方式？',o:['Fine-tuning，每週重新訓練一次','RAG，把產品文件放入向量資料庫，AI 查詢後再回答','兩者都不適合，需要人工客服','直接修改模型的程式碼'],a:1,e:'正確！產品規格頻繁更新，用 Fine-tuning 每週重訓成本極高。RAG 只需更新向量資料庫中的文件，即可讓 AI 即時具備最新知識。'}}},
+  {id:'a8',f:'arch',icon:'📡',tag:'技術架構',title:'模型評估與 Benchmark',time:'約 6 分鐘',desc:'怎麼知道一個 AI 模型夠不夠好？用什麼標準衡量？',
+   c:{core:'模型評估是 AI 開發中最容易被忽視但最重要的環節。沒有清楚的評估指標，就不知道模型有沒有在進步。Benchmark 是業界用來比較模型能力的標準化測試集。',
+    ana:{i:'🏋️',t:'<strong>健身比喻：</strong>沒有測量就沒有進步。健身需要記錄體重、體脂、最大重量；AI 也需要記錄各項指標。Benchmark 就是 AI 的「體能測驗」，讓不同模型可以在相同條件下公平比較。'},
+    pts:['MMLU：測試廣泛學科知識，是最常引用的 LLM Benchmark','HumanEval：測試程式碼生成能力','業務評估：最重要的是在你自己的使用場景上測試','評估指標：準確率（Accuracy）、召回率（Recall）、F1 Score','通用 Benchmark 排名不代表業務場景表現'],
+    q:{q:'為什麼在通用 Benchmark 排名第一的模型，不一定是你業務場景的最佳選擇？',o:['因為排名第一的模型通常太貴','因為 Benchmark 測試的是通用能力，而你的業務有特定需求','因為排名高的模型速度通常較慢','因為最新的模型 API 還不穩定'],a:1,e:'正確！Benchmark 衡量的是「平均能力」，但你的業務場景可能有特殊的語言、格式、領域知識要求。針對你的資料測試比看排名更重要。'}}},
+  {id:'a9',f:'arch',icon:'🛡️',tag:'技術架構',title:'AI 系統的安全設計',time:'約 7 分鐘',desc:'Prompt Injection、資料外洩、權限控制——企業 AI 的安全挑戰。',
+   c:{core:'企業導入 AI 最容易忽略的就是安全設計。AI 系統面臨獨特的安全威脅：使用者可能透過精心設計的 Prompt 繞過限制（Prompt Injection）、敏感資料可能透過 AI 回應洩露。',
+    ana:{i:'🏦',t:'<strong>銀行保險庫：</strong>銀行不會讓任何人都能進入金庫，即使是員工也只能在授權範圍內操作。企業 AI 系統也需要同樣的分層授權機制——不是所有使用者都能查詢所有資料。'},
+    pts:['Prompt Injection：攻擊者在輸入中插入指令試圖操控 AI 行為，需要輸入清洗和系統提示保護','資料隔離：RAG 系統中確保使用者只能查到有權限的文件','最小權限原則：AI Agent 只授予完成任務所需的最小權限','審計日誌：記錄所有 AI 操作，便於追蹤異常行為','敏感資料脫敏：進入 AI 前先遮蔽個人識別資訊（PII）'],
+    q:{q:'什麼是「Prompt Injection」攻擊？',o:['向 AI 模型注射病毒程式','攻擊者在輸入中插入惡意指令，試圖讓 AI 忽略原本的安全限制','讓 AI 系統超載當機','偷取 AI 模型的訓練資料'],a:1,e:'正確！Prompt Injection 是 AI 安全最重要的威脅之一。防禦方式包括：輸入過濾、系統提示加固、及不信任外部資料中的指令。'}}},
+
+  // ── 延伸知識 ──
+  {id:'e1',f:'extra',icon:'🔒',tag:'延伸知識',title:'AI 安全與倫理',time:'約 6 分鐘',desc:'負責任的 AI 開發需要考慮哪些問題？',
+   c:{core:'AI 安全不只是「防駭客」，更包括確保 AI 行為符合人類價值觀、避免偏見、保護隱私，以及防止惡意使用。隨著 AI 能力增強，這些議題越來越重要。',
+    ana:{i:'🏛️',t:'<strong>核電廠比喻：</strong>核能很強大，但需要完善的安全機制和監管框架。AI 也一樣——能力越強，安全機制就越重要。Anthropic 的 Constitutional AI 就是在訓練時讓 AI 學習安全原則。'},
+    pts:['對齊問題（Alignment）：如何確保 AI 的目標符合人類價值觀','偏見（Bias）：訓練資料中的偏見會被 AI 學習並放大','隱私：AI 系統可能洩露或不當使用個人資料','AI 治理：各國政府正在建立 AI 法規框架（EU AI Act）','AI 安全研究：對抗攻擊、模型可解釋性、紅隊測試'],
+    q:{q:'「AI 對齊（Alignment）」研究的核心目標是什麼？',o:['讓 AI 計算速度對齊人腦速度','確保 AI 的行為和目標符合人類的價值觀和意圖','讓所有 AI 系統使用統一的標準格式','讓 AI 翻譯結果對齊原文意思'],a:1,e:'正確！對齊問題是 AI 安全研究最核心的課題——如何確保越來越強大的 AI 系統，其行為和目標是真正對人類有益的。'}}},
+  {id:'e2',f:'extra',icon:'💰',tag:'延伸知識',title:'AI 的成本與商業模式',time:'約 5 分鐘',desc:'訓練費用、API 定價、Token 計費——AI 的錢怎麼算？',
+   c:{core:'AI 的成本分兩種：訓練成本（一次性，極高）和推理成本（每次使用，按 Token 計費）。對企業而言，通常只需考慮推理成本——也就是 API 費用。',
+    ana:{i:'💡',t:'<strong>電力比喻：</strong>訓練模型像建發電廠（數億美元），使用 API 像按月付電費（可預測）。大多數企業不需要建發電廠，只需要接上電網就好。'},
+    pts:['GPT-4 訓練成本：估計超過 1 億美元','API 費用：約 3-15 美元 / 100 萬 Token（依模型而定）','Token 計費：輸入 + 輸出 Token 分開計算','企業月費：中小型應用通常幾千到幾萬元台幣','降低成本策略：快取 Prompt、選擇較小模型、批次處理'],
+    q:{q:'對於大多數企業而言，使用 AI 的主要費用是什麼？',o:['購買大量 GPU 伺服器','自己訓練大型語言模型','呼叫 AI API 的 Token 費用','購買 AI 研究機構的授權'],a:2,e:'正確！大多數企業不需要自訓練模型，而是透過 API 使用現成模型，費用按 Token 數量計算，可預測且相對低廉。'}}},
+  {id:'e3',f:'extra',icon:'🌏',tag:'延伸知識',title:'AI 的全球競爭格局',time:'約 6 分鐘',desc:'美國、中國、歐洲——誰在 AI 領域領先？',
+   c:{core:'AI 已成為國家級戰略競爭領域。美國目前在基礎模型研究和商業化上領先，中國在政府支持和特定應用上緊追，歐盟則聚焦在 AI 治理和法規框架的制定。',
+    ana:{i:'🌍',t:'<strong>關鍵競爭要素：</strong>1) 算力（GPU 晶片——NVIDIA 目前主導）；2) 資料（誰掌握更多高品質資料）；3) 人才（頂尖 AI 研究員的全球爭奪）；4) 資金（風投和政府投入）。'},
+    pts:['美國：OpenAI、Anthropic、Google DeepMind、Meta AI 主導基礎模型','中國：百度文心、阿里通義、華為盤古，受晶片出口管制影響','歐盟：Mistral（法國）、EU AI Act 2024 年生效成全球首個 AI 法規','開源趨勢：Meta 的 Llama、Mistral 推動開源生態系成長','台灣定位：半導體優勢（TSMC）＋系統整合能力，是 AI 供應鏈關鍵節點'],
+    q:{q:'台灣在全球 AI 發展中最重要的貢獻是什麼？',o:['最多 AI 研究論文','最大的 AI 訓練資料集','半導體製造能力，特別是 AI 晶片代工（TSMC）','最多 AI 新創公司'],a:2,e:'正確！台積電製造了全球 90% 以上的高階 AI 晶片（NVIDIA H100/H200 等），讓台灣在 AI 供應鏈中佔有不可替代的關鍵地位。'}}},
+  {id:'e4',f:'extra',icon:'🚀',tag:'延伸知識',title:'Prompt Engineering 技巧',time:'約 7 分鐘',desc:'怎麼問 AI，才能得到最好的答案？',
+   c:{core:'Prompt Engineering（提示詞工程）是設計輸入給 AI 的指令，讓它輸出更精準、更有用的結果。好的 Prompt 能讓普通模型表現出色，壞的 Prompt 讓頂級模型也交出差勁結果。',
+    ana:{i:'🎯',t:'<strong>搜尋引擎類比：</strong>早期 Google 搜尋需要學「關鍵字技巧」；現在使用 AI 需要學「Prompt 技巧」。基本原則是：越具體越好，給 AI 足夠的背景資訊和期望格式。'},
+    pts:['具體化：「幫我寫 Email」→「幫我寫給供應商的婉拒合作信，語氣正式，約 150 字」','給角色：「你是一位有 10 年經驗的財務分析師，請分析…」','要求格式：「請用條列式輸出，分三個重點」','提供範例：「參考以下格式：[範例]」','Chain-of-Thought：「請一步一步思考，然後給出答案」'],
+    q:{q:'以下哪個 Prompt 最可能得到高品質的輸出？',o:['寫一封 Email','寫一封給客戶的道歉信','幫我寫一封給 VIP 客戶的道歉信，說明系統延誤原因，語氣誠懇，附上補償方案，約 200 字','給我看 Email 範本'],a:2,e:'正確！最佳 Prompt 包含：目標、對象、背景、語氣要求、內容要求、長度限制。資訊越具體，AI 輸出越精準。'}}},
+  {id:'e5',f:'extra',icon:'📈',tag:'延伸知識',title:'AI 導入的 ROI 評估',time:'約 6 分鐘',desc:'如何計算 AI 投資報酬率？說服主管的關鍵數字怎麼算？',
+   c:{core:'導入 AI 最大的障礙往往不是技術，而是如何向管理層證明投資值得。ROI 計算需要量化「節省的時間/成本」和「增加的收入/品質」，並與「導入成本」比較。',
+    ana:{i:'💼',t:'<strong>雇人比喻：</strong>把 AI 想成一個永不請假、24 小時工作、月費幾千元的員工。例如：發票自動化每月節省 40 小時人工 × 時薪 300 元 = 每月節省 12,000 元，API 費用 2,000 元，ROI = 500%。'},
+    pts:['量化節省：每月節省 X 小時人工 × 時薪 = 直接成本節省','量化品質：錯誤率下降 Y%，每個錯誤成本 Z 元 = 品質收益','導入成本：API 費用 + 開發工時 + 維護工時','建議從高 ROI 場景切入：發票比對、文件摘要、報表生成','先做 Pilot（試驗）：2-4 週，用真實資料，量化結果後再決定是否擴大'],
+    q:{q:'評估 AI 導入 ROI 時，以下哪個做法最務實？',o:['先建立完整的 AI 平台，再量測效益','選擇一個高重複性的痛點流程，做 2-4 週 Pilot，量化節省後再決定擴大','等待 AI 技術更成熟再導入','只計算 API 費用，忽略開發和維護成本'],a:1,e:'正確！「小步快跑、先驗證 ROI」是企業 AI 導入的黃金法則。選一個可量化的場景做 Pilot，用真實數據說話，比任何 PPT 提案都更有說服力。'}}},
+  {id:'e6',f:'extra',icon:'🤝',tag:'延伸知識',title:'AI 與人類協作的未來',time:'約 5 分鐘',desc:'AI 會取代工作嗎？哪些技能在 AI 時代更有價值？',
+   c:{core:'AI 不是要取代人類，而是改變工作的內容和方式。歷史上每次技術革命都創造了新工作，同時淘汰了舊工作。AI 時代最有價值的技能，是那些 AI 最難複製的——判斷力、創造力、同理心、跨領域整合。',
+    ana:{i:'✈️',t:'<strong>飛行員比喻：</strong>自動駕駛讓飛機可以在巡航時自動飛行，但飛行員的工作沒有消失——他們從「操控飛機」轉變為「監督系統、處理異常、做關鍵判斷」。AI 也是如此，它讓人類從重複性工作解放出來。'},
+    pts:['即將被自動化的高風險工作：高度重複的資料輸入、基礎翻譯、簡單文書','AI 難以取代的能力：複雜情境判斷、創意發想、人際關係、跨領域整合','新增的需求：Prompt 工程師、AI 系統架構師、AI 倫理官、人機協作設計師','最重要的投資：批判性思維——能判斷 AI 輸出的對錯，比 AI 更有價值'],
+    q:{q:'在 AI 時代，以下哪種技能最難被 AI 取代？',o:['快速打字','記憶大量事實知識','在複雜情境中做帶有價值判斷的決策','翻譯外文文件'],a:2,e:'正確！AI 在記憶知識、快速翻譯、資料處理等方面已超越人類，但在需要「價值觀、情感、複雜情境判斷」的工作上仍有明顯限制。'}}},
+  {id:'e7',f:'extra',icon:'🏗️',tag:'延伸知識',title:'從零開始做一個 AI 專案',time:'約 8 分鐘',desc:'實際動手的第一步：從問題定義到上線，完整流程說明。',
+   c:{core:'很多人知道 AI 很強大，但不知道從哪裡開始。一個 AI 專案的正確起點不是選模型，而是定義清楚「要解決什麼問題」。問題定義清楚了，技術選型自然就有方向。',
+    ana:{i:'🧭',t:'<strong>蓋房子比喻：</strong>蓋房子不是從買磚頭開始，而是從「你要住幾個人、要幾間房、預算多少」開始。AI 專案也一樣——先定義問題、量化目標、確認資料，再選工具，最後才寫程式。'},
+    pts:['Step 1 問題定義：這個問題值得解嗎？ROI 夠嗎？用 AI 是最佳方案嗎？','Step 2 資料盤點：有哪些資料？品質如何？量夠嗎？能合法使用嗎？','Step 3 建立評估指標：怎麼衡量成功？準確率？節省時間？用戶滿意度？','Step 4 技術選型：API 還是自建？RAG 還是 Fine-tuning？','Step 5 Pilot 驗證：用最小可行版本（MVP）在真實環境測試','Step 6 監控與迭代：上線後持續監控，收集回饋，定期更新'],
+    q:{q:'一個 AI 專案最常見的失敗原因是什麼？',o:['選錯了 AI 模型','資料不足或品質太差，導致模型無法學習','開發團隊技術能力不足','預算不夠買足夠的 GPU'],a:1,e:'正確！超過 85% 的 AI 專案失敗都與資料有關——資料不足、品質差、標注錯誤、或根本沒有合適的資料。這是為什麼「資料品質第一」是 AI 開發的鐵律。'}}},
+];
+
+const GLOSSARY = [
+  {t:'Transformer',e:'Transformer',c:'模型',col:'#3b82f6',d:'現代大型語言模型的基礎架構，透過「注意力機制」讓模型能同時理解文字之間的複雜關係。GPT、Claude、Llama 都基於此架構。'},
+  {t:'Embedding（嵌入）',e:'Embedding',c:'資料',col:'#22d3ee',d:'將文字、圖片等資料轉換成數字向量（一串數字），讓電腦能夠計算「語意相似度」。這是語意搜尋和 RAG 的基礎。'},
+  {t:'Fine-tuning（微調）',e:'Fine-tuning',c:'訓練',col:'#a78bfa',d:'用少量特定領域的資料，對已預訓練的通用模型進行再訓練，讓它專精於特定任務或風格。'},
+  {t:'Prompt Engineering',e:'Prompt Engineering',c:'應用',col:'#34d399',d:'設計和優化輸入給 AI 的提示詞，讓 AI 輸出更準確、更有用的結果。是使用 AI 最重要的技能之一。'},
+  {t:'Token',e:'Token',c:'基礎',col:'#fbbf24',d:'AI 處理文字的最小單位。英文約 0.75 個單字 = 1 Token；中文通常 1 個字 = 1 Token。模型費用通常按 Token 計算。'},
+  {t:'Context Window（上下文視窗）',e:'Context Window',c:'模型',col:'#f87171',d:'AI 模型一次能「看到」的文字量上限。超過上限就會忘記更早的內容。Claude 3.5 的上限約 200K Token，相當於一本厚書。'},
+  {t:'幻覺（Hallucination）',e:'Hallucination',c:'風險',col:'#f87171',d:'AI 非常自信地輸出不存在或錯誤的「事實」，例如捏造論文引用或錯誤的法律條文。目前 LLM 最大的挑戰之一。'},
+  {t:'RAG',e:'Retrieval-Augmented Generation',c:'架構',col:'#34d399',d:'檢索增強生成。讓 AI 在回答前先查詢外部資料庫，根據查到的內容生成答案，解決幻覺和知識過時問題。'},
+  {t:'MCP',e:'Model Context Protocol',c:'整合',col:'#0f766e',d:'Anthropic 提出的開放協定，讓 AI 模型能夠安全、標準化地連接外部工具和資料來源。類似 USB 統一接口的概念。'},
+  {t:'RLHF',e:'Reinforcement Learning from Human Feedback',c:'訓練',col:'#a78bfa',d:'人類回饋強化學習。讓人類評分員對 AI 回答打分，訓練獎勵模型，使 AI 行為更符合人類偏好。ChatGPT 的關鍵技術。'},
+  {t:'向量資料庫',e:'Vector Database',c:'資料',col:'#22d3ee',d:'儲存和搜尋語意向量的資料庫。支援「語意相似度搜尋」，是 RAG 系統的核心組件。常見：Pinecone、Chroma、pgvector。'},
+  {t:'LLM',e:'Large Language Model',c:'模型',col:'#3b82f6',d:'大型語言模型。透過海量文字資料訓練的 AI 模型，能理解和生成自然語言。代表：GPT-4、Claude、Llama、Gemini。'},
+  {t:'AGI',e:'Artificial General Intelligence',c:'概念',col:'#fbbf24',d:'通用人工智慧。能夠像人類一樣處理各種不同任務的 AI。目前尚未達成，是 AI 研究的終極目標。'},
+  {t:'注意力機制',e:'Attention Mechanism',c:'模型',col:'#3b82f6',d:'Transformer 的核心，讓模型計算輸入中每個詞對其他詞的「重要程度」，從而更好地理解上下文關係。'},
+  {t:'擴散模型',e:'Diffusion Model',c:'模型',col:'#f87171',d:'圖片和影片生成 AI 的主要架構。透過逐步「去除雜訊」的過程生成高品質圖片。代表：Stable Diffusion、DALL-E、Sora。'},
+  {t:'API',e:'Application Programming Interface',c:'整合',col:'#0f766e',d:'應用程式介面。讓開發者呼叫 AI 模型服務的標準接口。企業使用 AI 最常見的方式，按 Token 計費。'},
+  {t:'預訓練',e:'Pre-training',c:'訓練',col:'#a78bfa',d:'用大量通用資料（網頁、書籍等）訓練模型的第一步。讓模型學習語言的基本規律和通用知識。需要巨大算力。'},
+  {t:'多模態 AI',e:'Multimodal AI',c:'模型',col:'#34d399',d:'能同時處理多種類型資料（文字+圖片+聲音+影片）的 AI。代表：GPT-4V、Gemini Ultra、Claude 3.5。'},
+  {t:'AI Agent',e:'AI Agent',c:'架構',col:'#34d399',d:'能夠自主規劃、決策、執行多步驟任務以達成目標的 AI 系統。包含記憶、規劃、工具、行動四大組件。'},
+  {t:'Kafka',e:'Apache Kafka',c:'整合',col:'#0f766e',d:'分散式訊息佇列系統。在 AI 整合架構中，用於處理高吞吐量的事件流，讓 ERP/MES 事件能觸發 AI 流程。'},
+  {t:'Orchestration（協調）',e:'Orchestration',c:'架構',col:'#34d399',d:'AI Agent 的協調機制，負責接收高階目標、分解任務、呼叫工具、整合結果。LangGraph 是常見的 Orchestration 框架。'},
+  {t:'Chain-of-Thought',e:'Chain-of-Thought (CoT)',c:'應用',col:'#fbbf24',d:'思維鏈提示法。讓 AI「一步一步思考」而不是直接給答案，顯著提升複雜推理任務的準確率。'},
+  {t:'GPU',e:'Graphics Processing Unit',c:'基礎',col:'#fbbf24',d:'圖形處理器。因其並行計算能力，成為 AI 訓練和推理的核心硬體。NVIDIA 的 H100/H200 是目前最主流的 AI 加速晶片。'},
+  {t:'Zero-shot / Few-shot',e:'Zero-shot / Few-shot',c:'應用',col:'#22d3ee',d:'Zero-shot：不給任何範例直接提問。Few-shot：給少量範例後再提問。Few-shot 通常能顯著提升輸出品質。'},
+  {t:'梯度下降',e:'Gradient Descent',c:'訓練',col:'#a78bfa',d:'機器學習最核心的優化算法。透過反覆計算損失函數的梯度，朝誤差最小的方向調整模型參數。是「答錯了就修正」的數學實現。'},
+  {t:'過擬合',e:'Overfitting',c:'訓練',col:'#f87171',d:'模型在訓練資料上表現極好，但在新資料上表現差。就像學生只會背考古題，遇到新題就不會了。需要正則化、資料增量等技術處理。'},
+  {t:'批次正規化',e:'Batch Normalization',c:'訓練',col:'#a78bfa',d:'深度學習中穩定訓練過程的技術，對每一批輸入資料進行標準化，讓模型訓練更快、更穩定。'},
+  {t:'神經網路',e:'Neural Network',c:'模型',col:'#3b82f6',d:'仿照人腦神經元連接方式設計的計算架構。由輸入層、隱藏層、輸出層組成，透過反向傳播算法學習。深度學習的基礎。'},
+  {t:'Tokenization（分詞）',e:'Tokenization',c:'基礎',col:'#fbbf24',d:'將文字切分成 Token 的過程。不同語言有不同的分詞策略，中文通常以字為單位，英文以子詞（subword）為單位。'},
+  {t:'Prompt（提示詞）',e:'Prompt',c:'應用',col:'#34d399',d:'輸入給 AI 模型的文字指令或問題。Prompt 的品質直接影響 AI 輸出的質量，是使用 AI 最重要的技能。'},
+  {t:'Temperature（溫度）',e:'Temperature',c:'推理',col:'#22d3ee',d:'控制 AI 輸出隨機性的參數。溫度=0 時輸出最確定，溫度高時輸出更有創意但可能不穩定。適合創意任務用高溫度，事實查詢用低溫度。'},
+  {t:'推理（Inference）',e:'Inference',c:'推理',col:'#22d3ee',d:'訓練好的模型對新輸入進行預測的過程。相對於訓練，推理成本較低但需要低延遲。企業使用 AI 的日常操作就是推理。'},
+  {t:'監督式學習',e:'Supervised Learning',c:'訓練',col:'#a78bfa',d:'機器學習最常見的方式，使用有標注的訓練資料（輸入+正確答案）訓練模型。圖片分類、垃圾郵件偵測都屬於監督式學習。'},
+  {t:'無監督式學習',e:'Unsupervised Learning',c:'訓練',col:'#a78bfa',d:'從沒有標注的資料中自動找出規律和結構。例如聚類分析（K-means）、降維（PCA）。常用於資料探索和特徵學習。'},
+  {t:'強化學習',e:'Reinforcement Learning',c:'訓練',col:'#a78bfa',d:'透過「獎勵與懲罰」機制讓 AI 學習最優行為策略。AlphaGo 擊敗圍棋冠軍、AI 玩遊戲都使用了強化學習。'},
+  {t:'遷移學習',e:'Transfer Learning',c:'訓練',col:'#34d399',d:'將一個任務上學到的知識，遷移應用到相關任務上。LLM 的 Fine-tuning 就是遷移學習的應用——先在大量通用資料上預訓練，再遷移到特定任務。'},
+  {t:'Prompt Injection',e:'Prompt Injection',c:'安全',col:'#f87171',d:'AI 安全威脅之一。攻擊者在輸入中藏入惡意指令，試圖操控 AI 忽略安全限制或洩露機密資訊。是企業 AI 部署必須防範的風險。'},
+  {t:'LangChain / LangGraph',e:'LangChain / LangGraph',c:'框架',col:'#0f766e',d:'主流的 AI Agent 開發框架。LangChain 適合單一流程串接，LangGraph 適合複雜的多步驟、有狀態的 Agent 工作流程。'},
+  {t:'SFT（監督微調）',e:'Supervised Fine-Tuning',c:'訓練',col:'#a78bfa',d:'使用高品質的人工標注對話資料對預訓練模型進行微調，讓模型學會「如何以有幫助的方式回答問題」的訓練階段。'},
+  {t:'Embedding 模型',e:'Embedding Model',c:'資料',col:'#22d3ee',d:'專門用來將文字轉換成向量的模型，與生成文字的 LLM 不同。常見：OpenAI text-embedding-3、BGE、E5。是 RAG 系統的必要組件。'},
+  {t:'OData',e:'Open Data Protocol',c:'整合',col:'#0f766e',d:'SAP 等 ERP 系統常用的 REST API 標準，讓外部系統（包括 AI）能夠標準化地讀取和寫入 ERP 資料。'},
+  {t:'協同過濾',e:'Collaborative Filtering',c:'應用',col:'#34d399',d:'推薦系統的核心算法。分析使用者的行為歷史，找出口味相似的用戶，再根據他們的喜好進行推薦。YouTube、Netflix、蝦皮的推薦功能都使用了此技術。'},
+  {t:'深度學習',e:'Deep Learning',c:'模型',col:'#3b82f6',d:'機器學習的子領域，使用多層神經網路從資料中自動學習特徵。2012 年 AlexNet 引爆深度學習革命，現代 AI 的核心基礎。'},
+  {t:'預測維護',e:'Predictive Maintenance',c:'應用',col:'#34d399',d:'透過分析機器感測器資料預測設備何時可能故障，提前安排維修避免非計劃停機。製造業導入 AI 最高 ROI 的應用場景之一。'},
+  {t:'位置編碼',e:'Positional Encoding',c:'模型',col:'#3b82f6',d:'Transformer 架構中讓模型知道詞語順序的機制。由於注意力機制本身不感知位置，位置編碼將詞序資訊加入向量，讓模型能區分「貓追狗」和「狗追貓」的不同。'},
+  {t:'準確率',e:'Accuracy',c:'評估',col:'#fbbf24',d:'模型預測正確的比例，是最基本的評估指標。公式：正確預測數 / 總預測數。注意：在資料不平衡時（如 99% 正常、1% 異常），高準確率不代表模型真的好。'},
+  {t:'召回率',e:'Recall',c:'評估',col:'#fbbf24',d:'在所有真正為正例的樣本中，模型找出了多少比例。在醫療診斷、詐騙偵測等「寧可誤報也不能漏報」的場景中，召回率比準確率更重要。'},
+  {t:'F1 分數',e:'F1 Score',c:'評估',col:'#fbbf24',d:'準確率（Precision）和召回率（Recall）的調和平均數。當資料不平衡時，F1 比 Accuracy 更能反映模型的真實表現。'},
+  {t:'機器學習',e:'Machine Learning',c:'基礎',col:'#3b82f6',d:'AI 的核心技術，讓電腦從資料中自動學習規律，而不需要人類明確寫出所有規則。分為監督式、非監督式、強化學習三大類。'},
+  {t:'對齊',e:'Alignment',c:'安全',col:'#f87171',d:'確保 AI 系統的目標和行為符合人類價值觀和意圖的研究領域。隨著 AI 能力增強，對齊問題越來越重要，是 Anthropic 等安全導向 AI 公司的核心研究方向。'},
+  {t:'偏見',e:'Bias',c:'安全',col:'#f87171',d:'訓練資料中存在的不公平傾向，會被 AI 學習並在輸出中放大。例如：若訓練資料中女性擔任 CEO 的例子較少，AI 生成的「成功 CEO」圖片可能以男性為主。'},
+  {t:'聚類分析',e:'Clustering (K-means)',c:'模型',col:'#a78bfa',d:'無監督式學習中將資料依相似性自動分組的技術。K-means 是最常見的聚類算法，可用於客戶分群、文件分類、異常偵測等應用。'},
+  {t:'降維',e:'Dimensionality Reduction',c:'模型',col:'#a78bfa',d:'將高維度資料壓縮成低維度表示，同時盡量保留重要資訊的技術。PCA（主成分分析）是最常見的方法，常用於資料視覺化和特徵壓縮。'},
+  {t:'OCR',e:'Optical Character Recognition',c:'應用',col:'#34d399',d:'光學字元辨識。將圖片或掃描文件中的文字轉換成可編輯的數位文字。結合 AI 後可處理複雜版面和手寫字，廣泛用於發票自動化、文件數位化。'},
+  {t:'AOI',e:'Automated Optical Inspection',c:'應用',col:'#34d399',d:'自動光學檢測。製造業用於產品外觀品質檢測的系統。結合 AI 視覺模型後能更準確辨識細微瑕疵，速度遠超人工目檢，是工廠 AI 落地最成熟的應用之一。'},
+  {t:'MES',e:'Manufacturing Execution System',c:'整合',col:'#0f766e',d:'製造執行系統。管理工廠生產現場即時資訊，包括工單排程、產量追蹤、品質管控等。AI 整合 MES 後可實現智慧排程和即時異常預警。'},
+  {t:'Narrow AI（窄域 AI）',e:'Artificial Narrow Intelligence',c:'概念',col:'#fbbf24',d:'目前所有商業 AI 的等級。只能在特定任務上表現出色，無法跨領域泛化。ChatGPT 擅長語言、AlphaGo 擅長圍棋，但兩者都無法互換任務。'},
+  {t:'ASI（超級 AI）',e:'Artificial Super Intelligence',c:'概念',col:'#fbbf24',d:'假設中各方面能力全面超越人類的 AI。目前僅存在於理論和科幻小說中，何時能實現仍存在巨大爭議。'},
+  {t:'子詞分詞',e:'Subword Tokenization (BPE)',c:'基礎',col:'#fbbf24',d:'將英文單字切分成更小子單元的分詞策略（如 running → run + ning），讓模型能處理未見過的新詞。BPE（Byte Pair Encoding）是最常見的子詞分詞算法，被 GPT 系列廣泛使用。'},
+  {t:'EU AI Act',e:'EU Artificial Intelligence Act',c:'法規',col:'#f87171',d:'歐盟 2024 年生效的全球首個全面性 AI 法規框架。依風險等級將 AI 系統分類，高風險 AI（如醫療、人臉辨識）需符合嚴格透明度與可解釋性要求。'},
+  {t:'Constitutional AI',e:'Constitutional AI',c:'安全',col:'#f87171',d:'Anthropic 提出的 AI 訓練方法。讓 AI 遵循一套明確的原則（憲法）在訓練中自我評估和修正輸出，使其更安全、更符合人類價值觀。Claude 就是用此方法訓練的。'},
+  {t:'紅隊測試',e:'Red Teaming',c:'安全',col:'#f87171',d:'讓專業人員刻意嘗試攻擊或找出 AI 系統漏洞的安全測試方法。目的是在部署前找出潛在風險，是負責任 AI 開發的重要環節。'},
+  {t:'個人識別資訊',e:'PII (Personally Identifiable Information)',c:'安全',col:'#f87171',d:'可以用來識別特定個人身份的資訊，如姓名、身分證號、電話。AI 系統在處理此類資料前需進行脫敏（匿名化或假名化）以保護隱私。'},
+  {t:'最小可行產品',e:'MVP (Minimum Viable Product)',c:'應用',col:'#34d399',d:'以最少資源快速驗證核心假設的初始版本。AI 專案建議先做 MVP 驗證 ROI，確認可行後再投入更多資源，避免大規模投入後才發現方向錯誤。'},
+  {t:'反向傳播',e:'Backpropagation',c:'訓練',col:'#a78bfa',d:'神經網路訓練的核心算法。計算損失函數對每個參數的梯度，從輸出層往輸入層反向傳遞，讓每個參數知道應該怎麼調整以降低誤差。'},
+  {t:'損失函數',e:'Loss Function',c:'訓練',col:'#a78bfa',d:'衡量模型預測結果與真實答案差距的函數。訓練的目標就是最小化損失函數。常見的有：均方誤差（MSE）用於回歸，交叉熵（Cross-Entropy）用於分類。'},
+  {t:'Self-Attention',e:'Self-Attention',c:'模型',col:'#3b82f6',d:'Transformer 中模型對自己的輸入序列計算注意力分數的機制，讓每個 Token 都能「看到」序列中所有其他 Token，從而動態調整自己的向量表示。'},
+  {t:'Multi-Head Attention',e:'Multi-Head Attention',c:'模型',col:'#3b82f6',d:'同時從多個不同角度（多個注意力頭）計算注意力的機制。每個頭關注不同的語意關係（如語法、指代、語意），最後合併輸出，讓模型理解更豐富的文字關係。'},
+  {t:'梯度爆炸 / 消失',e:'Gradient Explosion / Vanishing',c:'訓練',col:'#a78bfa',d:'深層神經網路訓練時，梯度在反向傳播過程中可能變得極大（爆炸）或極小（消失），導致訓練不穩定或停滯。Transformer 的層正規化（LayerNorm）有助於緩解此問題。'},
+  {t:'MMLU',e:'Massive Multitask Language Understanding',c:'評估',col:'#fbbf24',d:'目前最廣泛引用的 LLM Benchmark，測試模型在數學、科學、歷史、法律等 57 個學科的知識理解能力。GPT-4、Claude 等模型的能力比較常以 MMLU 分數作為參考。'},
+  {t:'HumanEval',e:'HumanEval',c:'評估',col:'#fbbf24',d:'OpenAI 提出的程式碼生成能力 Benchmark，包含 164 道程式設計題目。衡量 LLM 能否從題目描述自動生成正確可執行的程式碼，是評估 Coding AI 能力的標準測試集。'},
+];
+
+const TIMELINE = [
+  {y:'1950',t:'圖靈測試',d:'Alan Turing 提出「機器能思考嗎？」的問題，定義了測試機器智能的圖靈測試，奠定 AI 哲學基礎。'},
+  {y:'1956',t:'AI 正式誕生',d:'達特茅斯會議，John McCarthy 首次提出「人工智慧」這個詞，標誌 AI 作為學術領域正式成立。'},
+  {y:'1997',t:'Deep Blue 擊敗棋王',d:'IBM Deep Blue 擊敗世界西洋棋冠軍 Garry Kasparov，成為早期 AI 在特定任務超越人類的里程碑。'},
+  {y:'2012',t:'深度學習爆發',d:'AlexNet 在 ImageNet 競賽大幅超越傳統方法，引爆深度學習（Deep Learning）革命，GPU 訓練成主流。'},
+  {y:'2017',t:'Transformer 登場',d:'Google 發表論文「Attention Is All You Need」，提出 Transformer 架構，奠定現代 LLM 的基礎。'},
+  {y:'2018',t:'BERT & GPT-1',d:'Google 的 BERT 和 OpenAI 的 GPT-1 先後推出，預訓練+微調的模式成為 NLP 標準範式。'},
+  {y:'2020',t:'GPT-3 震撼業界',d:'1750 億參數的 GPT-3 展現驚人的語言能力，讓業界意識到大模型的潛力，引發 AI 軍備競賽。'},
+  {y:'2022',t:'ChatGPT 引爆 AI 熱潮',d:'ChatGPT 上線 5 天達 100 萬用戶、2 個月達 1 億用戶，成為史上最快達到此里程碑的應用程式。'},
+  {y:'2023',t:'GPT-4 & 多模態元年',d:'GPT-4 引入視覺理解能力，Claude、Gemini 相繼推出，生成式 AI 進入百花齊放的競爭格局。'},
+  {y:'2024',t:'AI Agent 與推理模型',d:'OpenAI o1、Claude 3.5、AI Agent 框架成熟，AI 從「回答問題」進化到「自主完成多步驟任務」。'},
+  {y:'2025',t:'邁向 AGI？',d:'各大廠商競逐更強的推理能力，Anthropic、OpenAI、Google 宣稱 AGI 可能在數年內實現，監管框架逐步成形。'},
+];
+
+const ARCH_LAYERS = [
+  {cls:'ld',n:'L1',t:'資料層 Data Layer',tags:['資料收集','資料清洗','資料標注','向量資料庫','特徵倉庫','版本控制']},
+  {cls:'lm',n:'L2',t:'模型層 Model Layer',tags:['LLM','Fine-tuning','預訓練','RLHF','模型評估','Benchmark']},
+  {cls:'li',n:'L3',t:'推理層 Inference Layer',tags:['RAG','Embedding','API 服務','模型部署','Prompt 管理','快取']},
+  {cls:'la',n:'L4',t:'應用層 Application Layer',tags:['AI Agent','Tool Calling','Orchestration','ChatBot','Dashboard','MCP']},
+];
+
+const TOOLS = [
+  {e:'🤖',n:'ChatGPT',u:'chat.openai.com',tag:'問答 / 寫作',d:'最普及的 AI 助手，適合所有人作為第一個 AI 工具。免費版已非常強大。'},
+  {e:'✨',n:'Claude',u:'claude.ai',tag:'分析 / 長文',d:'Anthropic 出品，擅長長文件分析、邏輯推理，中文能力優秀。'},
+  {e:'🌟',n:'Gemini',u:'gemini.google.com',tag:'搜尋整合',d:'Google 出品，與 Google 服務深度整合，適合需要即時資訊的任務。'},
+  {e:'🔍',n:'Perplexity',u:'perplexity.ai',tag:'AI 搜尋',d:'AI 搜尋引擎，每個回答都附上來源網址，降低幻覺風險。'},
+  {e:'🎨',n:'Midjourney',u:'midjourney.com',tag:'圖片生成',d:'目前最強的 AI 圖片生成工具，用文字描述就能生成高品質圖片。'},
+  {e:'💻',n:'GitHub Copilot',u:'github.com/features/copilot',tag:'程式碼',d:'程式開發者的 AI 助手，自動補全程式碼，大幅提升開發效率。'},
+  {e:'📊',n:'NotebookLM',u:'notebooklm.google.com',tag:'文件分析',d:'Google 出品，上傳文件後可以對話問答，適合研究和學習。'},
+  {e:'🎙️',n:'ElevenLabs',u:'elevenlabs.io',tag:'語音合成',d:'最強的 AI 語音合成工具，支援多語言，聲音非常自然逼真。'},
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let done = new Set(JSON.parse(localStorage.getItem('ai_done2')||'[]'));
+let curLesson = null;
+
+// ═══════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nt').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`.nt[data-page="${id}"]`)?.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+document.getElementById('nav-tabs').addEventListener('click',e=>{
+  const btn = e.target.closest('.nt');
+  if(btn) goPage(btn.dataset.page);
+});
+
+// ═══════════════════════════════════════
+// PROGRESS
+// ═══════════════════════════════════════
+function updateProgress() {
+  const groups = {intro:[],arch:[],extra:[]};
+  LESSONS.forEach(l=>groups[l.f].push(l));
+  ['intro','arch','extra'].forEach(f=>{
+    const all = groups[f], n = all.filter(l=>done.has(l.id)).length, t = all.length;
+    const pct = t?Math.round(n/t*100):0;
+    document.getElementById(`${f}-done`).textContent = n;
+    document.getElementById(`${f}-total`).textContent = t;
+    document.getElementById(`${f}-fill`).style.width = pct+'%';
+    document.getElementById(`${f}-pct`).textContent = pct+'%';
+  });
+  const total = done.size;
+  document.getElementById('nav-prog').textContent = `${total} / ${LESSONS.length}`;
+  document.getElementById('done-hero').textContent = total;
+}
+
+// ═══════════════════════════════════════
+// LESSON GRIDS
+// ═══════════════════════════════════════
+function renderGrid(filter) {
+  const lessons = LESSONS.filter(l=>l.f===filter);
+  return lessons.map(l=>`
+    <div class="lcard ${done.has(l.id)?'done':''}" onclick="openLesson('${l.id}')">
+      <div class="cmeta">
+        <span class="ctag ${filter==='arch'?'arch':filter==='extra'?'extra':''}">${l.tag}</span>
+        <div class="ccheck">${done.has(l.id)?'✓':''}</div>
+      </div>
+      <div class="cicon">${l.icon}</div>
+      <div class="ctitle">${l.title}</div>
+      <div class="cdesc">${l.desc}</div>
+      <div class="ctime">⏱ ${l.time}</div>
+    </div>
+  `).join('');
+}
+
+function renderAllGrids() {
+  document.getElementById('grid-intro').innerHTML = renderGrid('intro');
+  document.getElementById('grid-arch').innerHTML  = renderGrid('arch');
+  document.getElementById('grid-extra').innerHTML = renderGrid('extra');
+}
+
+// ═══════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════
+function openLesson(id) {
+  const l = LESSONS.find(x=>x.id===id);
+  if(!l) return;
+  curLesson = l;
+  const tagCls = l.f==='arch'?'arch':l.f==='extra'?'extra':'';
+  document.getElementById('m-tag').innerHTML = `<span class="ctag ${tagCls}">${l.tag}</span>`;
+  document.getElementById('m-title').textContent = l.icon+'  '+l.title;
+  document.getElementById('m-time').textContent = '⏱ '+l.time;
+  const btn = document.getElementById('btn-mark');
+  const isDone = done.has(id);
+  btn.textContent = isDone?'✓ 已完成':'✓ 標記完成';
+  btn.className = 'btn-mark'+(isDone?' marked':'');
+  const c = l.c, qid='q-'+id;
+  document.getElementById('m-body').innerHTML = `
+    <div class="msec"><h3>核心概念</h3><div class="cbox">${c.core}</div></div>
+    <div class="msec"><h3>記憶方法</h3>
+      <div class="acard"><div class="aicon">${c.ana.i}</div><div class="atxt">${c.ana.t}</div></div>
+    </div>
+    <div class="msec"><h3>重點摘要</h3>
+      <ul class="kpts">${c.pts.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+    <div class="msec"><h3>小測驗</h3>
+      <div class="quiz-area" id="${qid}">
+        <div class="quiz-q">${c.q.q}</div>
+        <div class="quiz-opts">
+          ${c.q.o.map((o,i)=>`<button class="qopt" onclick="answer('${qid}',${i},${c.q.a},'${esc(c.q.e)}')">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
+        </div>
+        <div class="qfb" id="${qid}-fb"></div>
+      </div>
+    </div>`;
+  document.getElementById('moverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function esc(s){return s.replace(/'/g,"\\'")}
+
+function answer(qid,chosen,correct,exp) {
+  document.querySelectorAll(`#${qid} .qopt`).forEach((o,i)=>{
+    o.disabled=true;
+    if(i===correct) o.classList.add('correct');
+    else if(i===chosen) o.classList.add('wrong');
+  });
+  const fb=document.getElementById(`${qid}-fb`);
+  fb.className='qfb show '+(chosen===correct?'good':'bad');
+  fb.textContent=(chosen===correct?'✓ 正確！':'✗ 再想想。')+'  '+exp;
+}
+
+function closeModal() {
+  document.getElementById('moverlay').classList.remove('open');
+  document.body.style.overflow='';
+  curLesson=null;
+}
+function closeBg(e){if(e.target===document.getElementById('moverlay'))closeModal();}
+
+function markDone() {
+  if(!curLesson) return;
+  const id=curLesson.id, btn=document.getElementById('btn-mark');
+  if(done.has(id)){done.delete(id);btn.textContent='✓ 標記完成';btn.className='btn-mark';}
+  else{done.add(id);btn.textContent='✓ 已完成';btn.className='btn-mark marked';}
+  localStorage.setItem('ai_done2',JSON.stringify([...done]));
+  renderAllGrids(); updateProgress();
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ═══════════════════════════════════════
+// GLOSSARY
+// ═══════════════════════════════════════
+function renderGloss(data=GLOSSARY) {
+  document.getElementById('gloss-count').textContent = GLOSSARY.length;
+  document.getElementById('ggrid').innerHTML = data.map(g=>`
+    <div class="gcard">
+      <div class="gterm">${g.t}</div>
+      <div class="gen">${g.e}</div>
+      <div class="gdef">${g.d}</div>
+      <span class="gcat" style="background:${g.col}22;color:${g.col};border:1px solid ${g.col}44">${g.c}</span>
+    </div>`).join('');
+}
+function filterGloss() {
+  const q=document.getElementById('ginput').value.toLowerCase();
+  renderGloss(q?GLOSSARY.filter(g=>g.t.toLowerCase().includes(q)||g.e.toLowerCase().includes(q)||g.d.toLowerCase().includes(q)||g.c.toLowerCase().includes(q)):GLOSSARY);
+}
+
+// ═══════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════
+function renderTimeline() {
+  document.getElementById('tl').innerHTML = TIMELINE.map(x=>`
+    <div class="tli"><div class="tldot"></div>
+      <div class="tlyear">${x.y}</div>
+      <div class="tltitle">${x.t}</div>
+      <div class="tldesc">${x.d}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// ARCH DIAGRAM
+// ═══════════════════════════════════════
+function renderArch() {
+  document.getElementById('arch-stack').innerHTML = ARCH_LAYERS.map((l,i)=>`
+    ${i?'<div class="aarrow">↕</div>':''}
+    <div class="alayer ${l.cls}">
+      <div class="anum">${l.n}</div>
+      <div class="acontent">
+        <div class="atitle">${l.t}</div>
+        <div class="atags">${l.tags.map(t=>`<span class="atag">${t}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// TOOLS
+// ═══════════════════════════════════════
+function renderTools() {
+  document.getElementById('tgrid').innerHTML = TOOLS.map(t=>`
+    <div class="tcard">
+      <div class="temoji">${t.e}</div>
+      <div class="tname">${t.n}</div>
+      <div class="turl">${t.u}</div>
+      <div class="tdesc">${t.d}</div>
+      <span class="ttag">${t.tag}</span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+renderAllGrids();
+renderGloss();
+renderTimeline();
+renderArch();
+renderTools();
+updateProgress();
+</script>
+</body>
+</html>
