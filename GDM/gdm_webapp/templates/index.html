@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>妊娠糖尿病風險評估</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fbf3f3;
+    --paper-raised: #ffffff;
+    --ink: #4a3843;
+    --ink-muted: #8b7482;
+    --ink-faint: #bfa9b4;
+    --rule: #f0dce0;
+    --rule-strong: #e3bfc8;
+    --clinical: #8fbb9c;
+    --clinical-ink: #4f7c63;
+    --clinical-pale: #e1efe5;
+    --alert: #d8637e;
+    --alert-pale: #fbe1e7;
+    --gold: #dba526;
+    --gold-pale: #fcefcb;
+    --blob-mint: rgba(143, 187, 156, 0.20);
+    --blob-pink: rgba(216, 99, 126, 0.14);
+    --blob-lemon: rgba(219, 165, 38, 0.12);
+    --shadow: rgba(74, 56, 67, 0.10);
+
+    --font-display: "Noto Serif TC", "PMingLiU", Georgia, serif;
+    --font-body: "Noto Sans TC", "Segoe UI", "Microsoft JhengHei", sans-serif;
+    --font-mono: "JetBrains Mono", "Consolas", "SFMono-Regular", monospace;
+  }
+
+  /* 固定使用淺色馬卡龍配色，不隨系統深色模式切換 */
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    background:
+      radial-gradient(620px circle at 88% -8%, var(--blob-mint), transparent 60%),
+      radial-gradient(560px circle at -8% 28%, var(--blob-pink), transparent 60%),
+      radial-gradient(520px circle at 96% 78%, var(--blob-lemon), transparent 55%),
+      var(--paper);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 0 20px 72px;
+  }
+  ::selection { background: var(--clinical-pale); color: var(--clinical-ink); }
+
+  a { color: var(--clinical-ink); text-underline-offset: 2px; text-decoration-color: var(--rule-strong); }
+  a:hover { text-decoration-color: currentColor; }
+
+  .sheet { max-width: 960px; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    padding: 40px 0 22px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--clinical-ink);
+    margin: 0 0 10px;
+  }
+  .masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.7rem, 3.2vw, 2.3rem);
+    margin: 0 0 8px;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+  }
+  .masthead .desc {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  /* ---------- layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 258px 1fr;
+    gap: 0;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    padding: 28px 24px 28px 0;
+    border-right: 1px solid var(--rule-strong);
+  }
+  @media (max-width: 760px) {
+    .sidebar { border-right: none; border-bottom: 1px solid var(--rule-strong); padding: 24px 0; }
+  }
+  .sidebar-block + .sidebar-block { margin-top: 26px; }
+  .sidebar h2 {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .model-name {
+    font-size: 0.86rem;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+  .model-name b { font-weight: 600; }
+
+  .vitals { list-style: none; margin: 0; padding: 0; }
+  .vitals li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px dotted var(--rule-strong);
+    font-size: 0.83rem;
+  }
+  .vitals li:last-child { border-bottom: none; }
+  .vitals .k { color: var(--ink-muted); }
+  .vitals .v {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--clinical-ink);
+  }
+
+  .source-note {
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    line-height: 1.7;
+  }
+  .source-note code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    background: var(--paper-raised);
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid var(--rule);
+  }
+  .synthetic-note {
+    margin-top: 12px;
+    padding: 9px 11px;
+    font-size: 0.73rem;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    background: var(--gold-pale);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+  }
+  .synthetic-note strong { color: var(--gold); }
+
+  /* ---------- chart / form column ---------- */
+  .chart-col { padding: 28px 0 28px 32px; }
+  @media (max-width: 760px) { .chart-col { padding: 24px 0 0; } }
+
+  .chart-section + .chart-section { margin-top: 30px; }
+  .chart-section legend,
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--clinical-ink);
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--rule-strong);
+    width: 100%;
+    display: block;
+    margin-bottom: 18px;
+  }
+
+  fieldset { border: none; margin: 0; padding: 0; }
+
+  .row-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px 32px;
+  }
+  @media (max-width: 560px) { .row-grid { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; }
+  .field.full { grid-column: 1 / -1; }
+  label {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+  label .unit { color: var(--ink-faint); }
+
+  input, select {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--rule-strong);
+    border-radius: 0;
+    padding: 6px 2px 8px;
+    outline: none;
+    transition: border-color 0.15s, border-width 0.15s;
+  }
+  select { font-family: var(--font-body); appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%), linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%); background-position: calc(100% - 4px) 14px, calc(100% - 9px) 14px; background-size: 5px 5px; background-repeat: no-repeat; }
+  input:focus, select:focus { border-bottom: 2px solid var(--clinical); padding-bottom: 7px; }
+  input::placeholder { color: var(--ink-faint); }
+
+  .bmi-hint { font-size: 0.72rem; color: var(--ink-faint); margin-top: 5px; font-family: var(--font-mono); }
+
+  .submit-row { margin-top: 34px; display: flex; align-items: center; gap: 16px; }
+  button {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    padding: 13px 30px;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.08s;
+  }
+  button:hover { background: var(--clinical-ink); }
+  button:active { transform: scale(0.98); }
+  button:focus-visible { outline: 2px solid var(--clinical); outline-offset: 2px; }
+  .submit-hint { font-size: 0.76rem; color: var(--ink-faint); }
+
+  /* ---------- result ---------- */
+  .result {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    padding: 22px 26px 24px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  .result-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .result-title { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+  .verdict {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+  }
+  .verdict.low { color: var(--clinical-ink); }
+  .verdict.high { color: var(--alert); }
+
+  .gauge-score {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .gauge-score .pct { font-size: 0.95rem; color: var(--ink-faint); font-weight: 500; }
+
+  .gauge-wrap { margin-top: 4px; }
+  .gauge-track {
+    position: relative;
+    display: flex;
+    height: 26px;
+    border-radius: 3px;
+    overflow: visible;
+    border: 1px solid var(--rule-strong);
+  }
+  .gauge-zone { height: 100%; }
+  .gauge-zone.low { flex: 30; background: var(--clinical-pale); }
+  .gauge-zone.mid { flex: 30; background: var(--gold-pale); border-left: 1px solid var(--paper-raised); }
+  .gauge-zone.high { flex: 40; background: var(--alert-pale); border-left: 1px solid var(--paper-raised); }
+  .gauge-marker {
+    position: absolute;
+    top: -9px;
+    width: 0;
+    height: 44px;
+    border-left: 2px solid var(--ink);
+    transform: translateX(-1px);
+    transition: left 0.5s cubic-bezier(.2,.8,.2,1);
+  }
+  .gauge-marker::after {
+    content: attr(data-pct);
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .gauge-labels {
+    display: flex;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+    color: var(--ink-faint);
+  }
+  .gauge-labels span { flex: 30; }
+  .gauge-labels span:last-child { flex: 40; text-align: right; }
+  .gauge-labels span:nth-child(2) { text-align: center; }
+
+  .caveat {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border: 1px dashed var(--rule-strong);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    line-height: 1.7;
+  }
+  .caveat strong { color: var(--ink); }
+
+  .error-box {
+    border: 1px solid var(--alert);
+    background: var(--alert-pale);
+    color: var(--alert);
+    padding: 12px 16px;
+    border-radius: 3px;
+    font-size: 0.88rem;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    margin-top: 20px;
+    font-family: var(--font-mono);
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="masthead">
+    <p class="eyebrow">碩士論文研究工具 · 妊娠糖尿病篩檢評估</p>
+    <h1>妊娠糖尿病（GDM）風險評估表</h1>
+    <p class="desc">填入孕婦基本資料與臨床數值，模型將依據訓練資料中相近特徵之個案，推估妊娠糖尿病之風險機率。</p>
+  </div>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="sidebar-block">
+        <h2>使用模型</h2>
+        <p class="model-name">
+          <b>Stacking Classifier</b><br>
+          XGBoost・Random Forest・AdaBoost・<br>GradientBoosting・LightGBM<br>
+          （meta&nbsp;model：Random&nbsp;Forest）
+        </p>
+      </div>
+
+      <div class="sidebar-block">
+        <h2>Holdout 表現</h2>
+        <ul class="vitals">
+          <li><span class="k">準確率 Accuracy</span><span class="v">{{ (metrics.accuracy*100) | round(2) }}%</span></li>
+          <li><span class="k">AUC</span><span class="v">{{ metrics.auc | round(4) }}</span></li>
+          <li><span class="k">總資料量 n</span><span class="v">{{ metrics.n_total }}</span></li>
+          <li><span class="k">測試集 n</span><span class="v">{{ metrics.n_test }}</span></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-block">
+        <h2>資料來源</h2>
+        <p class="source-note">
+          原始資料集：<a href="https://figshare.com/articles/dataset/GDM_Dataset_xlsx/21806472/1?file=38695140" target="_blank" rel="noopener">GDM_Dataset.xlsx</a>（Figshare, 2023）<br>
+          訓練用檔案：<code>DATA/GDM_Model1_ext.csv</code><br>
+          對應程式：<code>程式/pycaret_無血壓model.ipynb</code>
+        </p>
+        {% if metrics.synthetic %}
+        <p class="synthetic-note">⚠ 此版本含<strong>合成擴增資料</strong>（原始 12,212 筆 → 擴增至 {{ metrics.n_total }} 筆，並新增「東亞」族群），效能數字僅供工具展示，非論文正式驗證數據。</p>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="chart-col">
+
+      {% if result %}
+        {% if result.error %}
+          <div class="result"><div class="error-box">{{ result.error }}</div></div>
+        {% else %}
+          <div class="result">
+            <div class="result-head">
+              <div>
+                <div class="result-title">評估結果</div>
+                <div class="verdict {{ 'high' if result.label == 1 else 'low' }}">
+                  {{ '較高風險 · 建議進一步檢查' if result.label == 1 else '較低風險' }}
+                </div>
+              </div>
+              <div class="gauge-score">{{ result.proba_pct }}<span class="pct">% 陽性機率</span></div>
+            </div>
+
+            <div class="gauge-wrap">
+              <div class="gauge-track">
+                <div class="gauge-zone low"></div>
+                <div class="gauge-zone mid"></div>
+                <div class="gauge-zone high"></div>
+                <div class="gauge-marker" style="left: {{ result.proba_pct }}%;" data-pct="{{ result.proba_pct }}%"></div>
+              </div>
+              <div class="gauge-labels">
+                <span>低風險 0–30%</span>
+                <span>中度 30–60%</span>
+                <span>高風險 60–100%</span>
+              </div>
+            </div>
+
+            <div class="caveat">
+              本工具僅為碩士論文研究之篩檢輔助模型，訓練資料存在類別不平衡問題，對於真陽性個案的召回率（Recall）約 68%，代表仍有約三分之一的真實陽性個案可能被判定為陰性。<strong>此結果僅供參考，不能取代醫療院所之口服葡萄糖耐受試驗（OGTT）與專業醫師診斷。</strong>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <form method="post" id="gdm-form">
+        <fieldset class="chart-section">
+          <legend class="section-label">基本資料</legend>
+          <div class="row-grid">
+            <div class="field">
+              <label for="age">年齡 <span class="unit">歲</span></label>
+              <input type="number" id="age" name="age" min="15" max="55" step="1" required
+                     value="{{ form_values.age if form_values.age else '' }}">
+            </div>
+            <div class="field">
+              <label for="gravida">孕次 Gravida <span class="unit">含本胎次數</span></label>
+              <input type="number" id="gravida" name="gravida" min="0" max="20" step="1" required
+                     value="{{ form_values.gravida if form_values.gravida else '' }}">
+            </div>
+            <div class="field">
+              <label for="weight">體重 <span class="unit">公斤</span></label>
+              <input type="number" id="weight" name="weight" min="30" max="200" step="0.1" required
+                     value="{{ form_values.weight if form_values.weight else '' }}">
+            </div>
+            <div class="field">
+              <label for="height">身高 <span class="unit">公分</span></label>
+              <input type="number" id="height" name="height" min="120" max="200" step="0.1" required
+                     value="{{ form_values.height if form_values.height else '' }}">
+            </div>
+            <div class="field">
+              <label for="bmi">BMI</label>
+              <input type="number" id="bmi" name="bmi" min="10" max="70" step="0.01" required
+                     value="{{ form_values.bmi if form_values.bmi else '' }}">
+              <span class="bmi-hint" id="bmi-hint">依體重／身高自動計算，可手動修改</span>
+            </div>
+            <div class="field">
+              <label for="ethnicity">種族／國籍分類</label>
+              <select id="ethnicity" name="ethnicity" required>
+                <option value="" disabled {{ 'selected' if not form_values.ethnicity else '' }}>請選擇</option>
+                {% for code, label in ethnicity_options %}
+                  <option value="{{ code }}" {{ 'selected' if form_values.ethnicity == code|string else '' }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="chart-section">
+          <legend class="section-label">臨床數值</legend>
+          <div class="row-grid">
+            <div class="field full">
+              <label for="glucose">空腹血糖值 <span class="unit">mmol/L，OGTT 0 分鐘</span></label>
+              <input type="number" id="glucose" name="glucose" min="2" max="15" step="0.01" required
+                     value="{{ form_values.glucose if form_values.glucose else '' }}">
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="submit-row">
+          <button type="submit">開始評估</button>
+          <span class="submit-hint">送出後即依上述資料計算風險機率</span>
+        </div>
+      </form>
+
+      <footer>GDM RISK CHART — 東海大學碩士論文研究工具 · 僅供學術與篩檢參考</footer>
+    </div>
+  </div>
+</div>
+
+<script>
+  const weightEl = document.getElementById('weight');
+  const heightEl = document.getElementById('height');
+  const bmiEl = document.getElementById('bmi');
+  const bmiHint = document.getElementById('bmi-hint');
+  let bmiManuallyEdited = false;
+
+  function computeBMI() {
+    const w = parseFloat(weightEl.value);
+    const h = parseFloat(heightEl.value);
+    if (w > 0 && h > 0) {
+      const bmi = w / Math.pow(h / 100, 2);
+      if (!bmiManuallyEdited) {
+        bmiEl.value = bmi.toFixed(2);
+      }
+      bmiHint.textContent = '依體重／身高計算值：' + bmi.toFixed(2);
+    }
+  }
+
+  weightEl.addEventListener('input', computeBMI);
+  heightEl.addEventListener('input', computeBMI);
+  bmiEl.addEventListener('input', () => { bmiManuallyEdited = true; });
+  computeBMI();
+</script>
+</body>
+</html>
