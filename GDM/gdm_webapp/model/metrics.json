@@ -1,0 +1,26 @@
+{
+  "accuracy": 0.9713467048710601,
+  "auc": 0.8756348485527286,
+  "confusion_matrix": [
+    [
+      2222,
+      0
+    ],
+    [
+      70,
+      151
+    ]
+  ],
+  "classification_report": "              precision    recall  f1-score   support\n\n           0       0.97      1.00      0.98      2222\n           1       1.00      0.68      0.81       221\n\n    accuracy                           0.97      2443\n   macro avg       0.98      0.84      0.90      2443\nweighted avg       0.97      0.97      0.97      2443\n",
+  "features": [
+    "Age",
+    "Weight",
+    "Height",
+    "BMI",
+    "Ethnicity",
+    "Gravida",
+    "Glucoselevel0minblood"
+  ],
+  "n_train": 9769,
+  "n_test": 2443
+}
