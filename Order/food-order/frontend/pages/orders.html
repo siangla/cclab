@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的訂單</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="/static/js/firebase-init.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="ordersPage()" x-init="init()">
+
+  <nav class="bg-white shadow-sm border-b sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a href="/" class="text-gray-400 hover:text-orange-500 text-xl">←</a>
+      <span class="font-bold text-gray-800">我的訂單</span>
+    </div>
+  </nav>
+
+  <!-- Tabs -->
+  <div class="bg-white border-b">
+    <div class="max-w-2xl mx-auto px-4 flex gap-1">
+      <button @click="activeTab='orders'"
+        :class="activeTab==='orders'?'border-b-2 border-orange-500 text-orange-500':'text-gray-500'"
+        class="px-5 py-3 text-sm font-medium">我的訂單</button>
+      <button @click="activeTab='waitlist'"
+        :class="activeTab==='waitlist'?'border-b-2 border-orange-500 text-orange-500':'text-gray-500'"
+        class="px-5 py-3 text-sm font-medium">
+        候補清單
+        <span x-show="waitingCount > 0"
+          class="ml-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full"
+          x-text="waitingCount"></span>
+      </button>
+      <button @click="activeTab='profile'; loadProfile()"
+        :class="activeTab==='profile'?'border-b-2 border-orange-500 text-orange-500':'text-gray-500'"
+        class="px-5 py-3 text-sm font-medium">我的資料</button>
+    </div>
+  </div>
+
+  <div class="max-w-2xl mx-auto px-4 py-6">
+
+    <div x-show="!user" class="text-center py-20 text-gray-400">
+      <p class="text-5xl mb-4">🔒</p>
+      <p class="mb-4">請先登入才能查看訂單</p>
+      <a href="/" class="bg-orange-500 text-white px-6 py-2 rounded-xl text-sm font-medium">回首頁登入</a>
+    </div>
+
+    <div x-show="user && loading" class="text-center py-16 text-gray-400">載入中...</div>
+
+    <!-- ── 我的訂單 ── -->
+    <div x-show="user && !loading && activeTab==='orders'">
+      <div x-show="sortedOrders.length === 0" class="text-center py-20 text-gray-400">
+        <p class="text-5xl mb-4">📋</p>
+        <p>還沒有任何訂單</p>
+        <a href="/" class="mt-4 inline-block bg-orange-500 text-white px-6 py-2 rounded-xl text-sm font-medium">去點餐</a>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <template x-for="order in sortedOrders" :key="order.order_id">
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <p class="text-xs text-gray-400" x-text="'訂單 #' + order.order_id.slice(-6).toUpperCase()"></p>
+                <p class="text-xs text-gray-400" x-text="formatDate(order.created_at)"></p>
+                <template x-if="order.pickup_date">
+                  <p class="text-xs text-blue-400 mt-0.5" x-text="'取貨：'+order.pickup_date+(order.pickup_hour!=null?' '+order.pickup_hour+':00~'+(order.pickup_hour+1)+':00':'')"></p>
+                </template>
+              </div>
+              <span class="text-xs font-bold px-3 py-1 rounded-full"
+                :class="statusStyle(order.status).cls"
+                x-text="statusStyle(order.status).label"></span>
+            </div>
+
+            <div class="border-t border-b border-gray-50 py-3 mb-3">
+              <template x-for="item in order.items" :key="item.product_id">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-700" x-text="item.product_name + ' × ' + item.qty"></span>
+                  <span class="text-gray-500" x-text="'$' + item.subtotal"></span>
+                </div>
+              </template>
+              <template x-if="order.note">
+                <p class="text-xs text-orange-400 mt-2 pt-2 border-t" x-text="'備註：'+order.note"></p>
+              </template>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-orange-500" x-text="'合計 $' + order.total_amount"></span>
+              <template x-if="['pending','accepted','preparing'].includes(order.status)">
+                <button @click="cancelOrder(order)"
+                  :disabled="cancelling === order.order_id"
+                  class="text-xs text-red-400 hover:text-red-600 border border-red-200 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                  <span x-show="cancelling !== order.order_id">申請取消</span>
+                  <span x-show="cancelling === order.order_id">處理中...</span>
+                </button>
+              </template>
+            </div>
+
+            <template x-if="order.reject_reason">
+              <p class="text-xs text-red-400 mt-2 bg-red-50 rounded-lg px-3 py-2" x-text="'拒絕原因：' + order.reject_reason"></p>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ── 候補清單 ── -->
+    <div x-show="user && !loading && activeTab==='waitlist'">
+      <div x-show="waitlist.length === 0" class="text-center py-20 text-gray-400">
+        <p class="text-5xl mb-4">⏳</p>
+        <p>還沒有候補紀錄</p>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <template x-for="entry in waitlist" :key="entry.waitlist_id">
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <p class="font-semibold text-gray-800" x-text="entry.product_name"></p>
+                <p class="text-xs text-gray-400 mt-0.5" x-text="'數量：' + entry.qty + ' 份'"></p>
+                <p class="text-xs text-gray-400" x-text="formatDate(entry.created_at)"></p>
+              </div>
+              <span class="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0"
+                :class="waitlistStyle(entry.status).cls"
+                x-text="waitlistStyle(entry.status).label"></span>
+            </div>
+
+            <template x-if="entry.status === 'confirmed'">
+              <div class="bg-blue-50 rounded-xl px-3 py-2 mb-3 text-xs text-blue-600">
+                🎉 已有空位！請盡快前往取貨或聯繫店家確認。
+              </div>
+            </template>
+
+            <template x-if="entry.status === 'waiting'">
+              <button @click="cancelWaitlist(entry)"
+                class="text-xs text-red-400 hover:text-red-600 border border-red-200 px-3 py-1.5 rounded-lg">
+                取消候補
+              </button>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ── 我的資料 ── -->
+    <div x-show="user && activeTab==='profile'">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-sm mx-auto mt-2">
+        <h2 class="font-bold text-base mb-4 text-gray-800">聯絡資訊</h2>
+        <p class="text-xs text-gray-400 mb-4">下單與候補時將自動帶入此資訊</p>
+        <div class="flex flex-col gap-3">
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">姓名</label>
+            <input x-model="profileForm.contact_name" type="text" placeholder="您的姓名"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">電話</label>
+            <input x-model="profileForm.contact_phone" type="tel" placeholder="聯絡電話"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          </div>
+          <button @click="saveProfile()" :disabled="profileSaving"
+            class="bg-orange-500 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-orange-600 disabled:opacity-50 mt-1">
+            <span x-show="!profileSaving">儲存</span>
+            <span x-show="profileSaving">儲存中...</span>
+          </button>
+          <p x-show="profileMsg" class="text-green-600 text-sm text-center" x-text="profileMsg"></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Cancel Confirm Modal -->
+  <div x-show="confirmCancel" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+      <h3 class="font-bold text-lg mb-2">申請取消訂單</h3>
+      <p class="text-gray-500 text-sm mb-4">
+        <template x-if="confirmCancel && confirmCancel.status === 'pending'">
+          <span>訂單尚未被接受，將直接取消。</span>
+        </template>
+        <template x-if="confirmCancel && confirmCancel.status !== 'pending'">
+          <span>店家已接受訂單，取消申請需等待店家審核同意。</span>
+        </template>
+      </p>
+      <div class="flex gap-3">
+        <button @click="confirmCancel = null" class="flex-1 border border-gray-300 py-2 rounded-xl text-sm">返回</button>
+        <button @click="doCancel()" class="flex-1 bg-red-500 text-white py-2 rounded-xl text-sm font-medium hover:bg-red-600">確認申請</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function ordersPage() {
+  return {
+    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    orders: [],
+    waitlist: [],
+    loading: false,
+    cancelling: null,
+    confirmCancel: null,
+    activeTab: 'orders',
+    profileForm: { contact_name: '', contact_phone: '' },
+    profileSaving: false,
+    profileMsg: '',
+
+    get sortedOrders() {
+      return [...this.orders].sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return tb - ta;
+      });
+    },
+
+    get waitingCount() {
+      return this.waitlist.filter(w => w.status === 'waiting').length;
+    },
+
+    async init() {
+      await initFirebase();
+      firebase.auth().onAuthStateChanged(async (fbUser) => {
+        if (fbUser) {
+          const token = await fbUser.getIdToken();
+          this.user = await syncUser(token);
+          await Promise.all([this.loadOrders(), this.loadWaitlist()]);
+        }
+      });
+    },
+
+    async loadOrders() {
+      this.loading = true;
+      try {
+        this.orders = await apiCall('GET', '/orders/my');
+      } catch(e) { console.error(e); }
+      finally { this.loading = false; }
+    },
+
+    async loadWaitlist() {
+      try {
+        this.waitlist = await apiCall('GET', '/waitlist/my');
+      } catch(e) { console.error(e); }
+    },
+
+    async loadProfile() {
+      try {
+        const p = await apiCall('GET', '/auth/me');
+        this.profileForm.contact_name = p.contact_name || '';
+        this.profileForm.contact_phone = p.contact_phone || '';
+      } catch(e) { console.error(e); }
+    },
+
+    async saveProfile() {
+      this.profileSaving = true;
+      this.profileMsg = '';
+      try {
+        await apiCall('PATCH', '/auth/profile', this.profileForm);
+        this.profileMsg = '已儲存！';
+        setTimeout(() => this.profileMsg = '', 3000);
+      } catch(e) { alert('儲存失敗：' + e.message); }
+      finally { this.profileSaving = false; }
+    },
+
+    async cancelWaitlist(entry) {
+      if (!confirm('確定取消候補？')) return;
+      try {
+        await apiCall('PATCH', `/waitlist/${entry.waitlist_id}`, { status: 'cancelled' });
+        await this.loadWaitlist();
+      } catch(e) { alert('操作失敗：' + e.message); }
+    },
+
+    cancelOrder(order) { this.confirmCancel = order; },
+
+    async doCancel() {
+      const order = this.confirmCancel;
+      this.confirmCancel = null;
+      this.cancelling = order.order_id;
+      try {
+        const newStatus = order.status === 'pending' ? 'cancelled' : 'cancel_requested';
+        await apiCall('PATCH', `/orders/${order.order_id}/status`, { status: newStatus });
+        await this.loadOrders();
+      } catch(e) { alert('操作失敗：' + e.message); }
+      finally { this.cancelling = null; }
+    },
+
+    statusStyle(status) {
+      const map = {
+        pending:          { label: '待確認',    cls: 'bg-yellow-100 text-yellow-700' },
+        accepted:         { label: '已接受',    cls: 'bg-blue-100 text-blue-700' },
+        preparing:        { label: '製作中',    cls: 'bg-indigo-100 text-indigo-700' },
+        ready:            { label: '可取餐 🔔', cls: 'bg-green-100 text-green-700' },
+        completed:        { label: '已完成',    cls: 'bg-gray-100 text-gray-600' },
+        cancelled:        { label: '已取消',    cls: 'bg-red-100 text-red-500' },
+        cancel_requested: { label: '取消審核中', cls: 'bg-orange-100 text-orange-600' },
+      };
+      return map[status] || { label: status, cls: 'bg-gray-100 text-gray-500' };
+    },
+
+    waitlistStyle(status) {
+      const map = {
+        waiting:   { label: '候補中',   cls: 'bg-blue-100 text-blue-600' },
+        confirmed: { label: '已有空位', cls: 'bg-green-100 text-green-600' },
+        cancelled: { label: '已取消',   cls: 'bg-gray-100 text-gray-400' },
+        converted: { label: '已轉訂單', cls: 'bg-orange-100 text-orange-600' },
+      };
+      return map[status] || { label: status, cls: 'bg-gray-100 text-gray-500' };
+    },
+
+    formatDate(ts) {
+      if (!ts) return '';
+      const d = ts._seconds ? new Date(ts._seconds * 1000) : new Date(ts);
+      return d.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    },
+  };
+}
+</script>
+</body>
+</html>

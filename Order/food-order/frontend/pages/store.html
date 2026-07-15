@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>店家菜單</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="/static/js/firebase-init.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="storePage()" x-init="init()">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm border-b sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a href="/" class="text-gray-400 hover:text-orange-500 text-xl">←</a>
+      <span class="font-bold text-gray-800" x-text="store.name || '載入中...'"></span>
+      <span x-show="store.is_open" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full ml-1">營業中</span>
+      <span x-show="store.is_open === false" class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full ml-1">休息中</span>
+      <div class="ml-auto flex items-center gap-3">
+        <template x-if="user">
+          <button @click="showCart = true" class="relative bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-orange-600">
+            🛒 購物車
+            <span x-show="cartCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center" x-text="cartCount"></span>
+          </button>
+        </template>
+        <template x-if="!user">
+          <button @click="showLogin = true" class="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-medium">登入後下單</button>
+        </template>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Store Header -->
+  <div class="bg-white border-b">
+    <div class="max-w-4xl mx-auto px-4 py-6">
+      <p class="text-gray-500 text-sm" x-text="store.description"></p>
+      <p class="text-xs text-orange-400 mt-1" x-text="store.address"></p>
+    </div>
+  </div>
+
+  <!-- Products -->
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div x-show="loading" class="text-center py-16 text-gray-400">載入菜單中...</div>
+
+    <template x-for="(group, category) in groupedProducts" :key="category">
+      <div class="mb-8">
+        <h3 class="font-bold text-gray-700 text-base mb-3 border-b pb-2" x-text="category || '其他'"></h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <template x-for="product in group" :key="product.product_id">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex gap-4"
+                 :class="{ 'opacity-50': !product.in_stock }">
+              <div class="w-20 h-20 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <template x-if="product.image_url">
+                  <img :src="product.image_url" class="w-full h-full object-cover">
+                </template>
+                <template x-if="!product.image_url">
+                  <span class="text-3xl">🍱</span>
+                </template>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-gray-800 text-sm" x-text="product.name"></h4>
+                <p class="text-xs text-gray-400 mt-0.5 line-clamp-2" x-text="product.description"></p>
+
+                <!-- 販售期間 -->
+                <template x-if="product.pickup_start || product.pickup_end">
+                  <p class="text-xs text-blue-400 mt-0.5">
+                    取貨：<span x-text="(product.pickup_start || '—') + ' ~ ' + (product.pickup_end || '—')"></span>
+                  </p>
+                </template>
+
+                <!-- 剩餘數量 -->
+                <template x-if="product.has_stock_limit && product.in_stock">
+                  <p class="text-xs mt-1"
+                     :class="product.current_stock <= 5 ? 'text-red-400 font-medium' : 'text-gray-400'">
+                    剩餘 <span x-text="product.current_stock"></span> 份
+                  </p>
+                </template>
+                <template x-if="product.max_per_person">
+                  <p class="text-xs mt-1"
+                     :class="(purchasedQty[product.product_id]||0) >= product.max_per_person ? 'text-red-400 font-medium' : 'text-blue-400'">
+                    每人限購 <span x-text="product.max_per_person"></span> 份
+                    <template x-if="user && (purchasedQty[product.product_id]||0) > 0">
+                      <span x-text="'（您已購 '+(purchasedQty[product.product_id]||0)+' 份，剩 '+Math.max(0,product.max_per_person-(purchasedQty[product.product_id]||0))+' 份）'"></span>
+                    </template>
+                  </p>
+                </template>
+
+                <div class="flex items-center justify-between mt-2">
+                  <span class="text-orange-500 font-bold" x-text="'$' + product.price"></span>
+                  <!-- 有庫存：加入購物車 -->
+                  <button x-show="product.in_stock && store.is_open"
+                    @click="addToCart(product)"
+                    class="bg-orange-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-orange-600 transition">
+                    + 加入
+                  </button>
+                  <!-- 售完 + 開放候補 -->
+                  <button x-show="!product.in_stock && product.allow_waitlist"
+                    @click="openWaitlistModal(product)"
+                    class="bg-blue-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-600 transition">
+                    候補
+                  </button>
+                  <!-- 售完 + 不開放候補 -->
+                  <span x-show="!product.in_stock && !product.allow_waitlist"
+                    class="text-xs text-gray-400 border border-gray-200 px-3 py-1.5 rounded-lg">售完</span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Cart Sidebar -->
+  <div x-show="showCart" class="fixed inset-0 z-50 flex" @click.self="showCart = false">
+    <div class="ml-auto w-full max-w-sm bg-white h-full shadow-2xl flex flex-col">
+      <div class="p-5 border-b flex items-center justify-between">
+        <h2 class="font-bold text-lg">購物車</h2>
+        <button @click="showCart = false" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5">
+        <template x-if="cart.length === 0">
+          <div class="text-center py-16 text-gray-400">
+            <p class="text-5xl mb-3">🛒</p>
+            <p class="text-sm">購物車是空的</p>
+          </div>
+        </template>
+
+        <template x-for="(item, idx) in cart" :key="idx">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="flex-1">
+              <p class="font-medium text-sm" x-text="item.name"></p>
+              <p class="text-xs text-orange-500" x-text="'$' + item.price"></p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button @click="changeQty(idx, -1)" class="w-7 h-7 rounded-full border flex items-center justify-center text-gray-600 hover:bg-gray-100">−</button>
+              <span class="text-sm font-medium w-5 text-center" x-text="item.qty"></span>
+              <button @click="changeQty(idx, 1)" class="w-7 h-7 rounded-full border flex items-center justify-center text-gray-600 hover:bg-gray-100">+</button>
+            </div>
+            <span class="text-sm font-bold text-gray-700 w-14 text-right" x-text="'$' + (item.price * item.qty)"></span>
+          </div>
+        </template>
+
+        <!-- 取貨日期與時間 -->
+        <template x-if="cart.length > 0">
+          <div class="mt-4 border-t pt-4">
+            <p class="text-sm font-semibold text-gray-700 mb-3">取貨時間</p>
+
+            <!-- 取貨日期 -->
+            <div class="mb-3">
+              <label class="text-xs text-gray-500 mb-1 block">取貨日期</label>
+              <input type="date" x-model="pickupDate"
+                :min="pickupDateMin" :max="pickupDateMax"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+              <p x-show="pickupDateRange" class="text-xs text-blue-400 mt-1" x-text="'可選範圍：' + pickupDateRange"></p>
+            </div>
+
+            <!-- 取貨時段 -->
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">取貨時段</label>
+              <select x-model="pickupHour"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+                <option value="">請選擇時段</option>
+                <template x-for="h in pickupHours" :key="h">
+                  <option :value="h" x-text="h + ':00 ~ ' + (h+1) + ':00'"></option>
+                </template>
+              </select>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="p-5 border-t bg-gray-50">
+        <div class="flex justify-between mb-3 font-bold text-base">
+          <span>合計</span>
+          <span class="text-orange-500" x-text="'$' + cartTotal"></span>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input x-model="contactName" type="text" placeholder="姓名 *"
+            class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+          <input x-model="contactPhone" type="tel" placeholder="電話 *"
+            class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+        </div>
+        <div class="mb-3">
+          <textarea x-model="note" placeholder="備註（口味、過敏原...）" rows="2"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-300"></textarea>
+        </div>
+        <button @click="placeOrder()" :disabled="cart.length === 0 || ordering"
+          class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-base hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+          <span x-show="!ordering">確認下單</span>
+          <span x-show="ordering">下單中...</span>
+        </button>
+        <p x-show="orderError" class="text-red-500 text-sm text-center mt-2" x-text="orderError"></p>
+        <template x-if="waitlistOfferProduct">
+          <div class="mt-2 bg-blue-50 rounded-xl px-3 py-2 text-xs text-blue-600 flex items-center justify-between">
+            <span>「<span x-text="waitlistOfferProduct.name"></span>」已售完</span>
+            <button @click="openWaitlistModal(waitlistOfferProduct); waitlistOfferProduct=null"
+              class="underline font-semibold ml-2">加入候補 →</button>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Success Modal -->
+  <div x-show="orderSuccess" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+      <p class="text-5xl mb-4">🎉</p>
+      <h2 class="text-xl font-bold mb-2">下單成功！</h2>
+      <p class="text-gray-500 text-sm mb-6">等待店家確認中，我們會通知您</p>
+      <div class="flex gap-3">
+        <button @click="orderSuccess = false; showCart = false" class="flex-1 border border-gray-300 py-2 rounded-xl text-sm">繼續瀏覽</button>
+        <a href="/orders" class="flex-1 bg-orange-500 text-white py-2 rounded-xl text-sm font-medium text-center">查看訂單</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waitlist Modal -->
+  <div x-show="showWaitlistModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showWaitlistModal=false">
+    <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+      <div class="bg-blue-50 rounded-xl px-4 py-3 mb-4">
+        <p class="text-xs font-bold text-blue-600 mb-1">⏳ 這是候補單</p>
+        <p class="text-xs text-blue-500">商品目前售完，填寫後送出候補申請。當庫存恢復時，店家將優先為您確認。</p>
+      </div>
+      <p class="font-semibold text-gray-800 mb-4" x-text="waitlistProduct?.name"></p>
+      <div class="flex flex-col gap-3 mb-4">
+        <div>
+          <label class="text-xs text-gray-500 mb-1 block">數量</label>
+          <input x-model="waitlistQty" type="number" min="1"
+            :max="waitlistProduct?.max_per_person || 99"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+        </div>
+        <div class="flex gap-2">
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 mb-1 block">姓名 *</label>
+            <input x-model="waitlistName" type="text" placeholder="您的姓名"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+          </div>
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 mb-1 block">電話 *</label>
+            <input x-model="waitlistPhone" type="tel" placeholder="聯絡電話"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+          </div>
+        </div>
+        <!-- 取貨日期/時段（商品有限制時才顯示） -->
+        <template x-if="waitlistProduct && (waitlistProduct.pickup_start || waitlistProduct.pickup_end || waitlistProduct.pickup_hours_start != null || waitlistProduct.pickup_hours_end != null)">
+          <div class="border-t pt-3 flex flex-col gap-2">
+            <p class="text-xs text-gray-500 font-medium">取貨時間</p>
+            <div>
+              <label class="text-xs text-gray-400 mb-1 block">取貨日期 *</label>
+              <input x-model="waitlistPickupDate" type="date"
+                :min="waitlistProduct.pickup_start || ''"
+                :max="waitlistProduct.pickup_end || ''"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+              <p x-show="waitlistProduct.pickup_start || waitlistProduct.pickup_end"
+                 class="text-xs text-blue-400 mt-1"
+                 x-text="'可選範圍：'+(waitlistProduct.pickup_start||'不限')+' ~ '+(waitlistProduct.pickup_end||'不限')"></p>
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 mb-1 block">取貨時段 *</label>
+              <select x-model="waitlistPickupHour"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <option value="">請選擇時段</option>
+                <template x-for="h in waitlistPickupHours" :key="h">
+                  <option :value="h" x-text="h + ':00 ~ ' + (h+1) + ':00'"></option>
+                </template>
+              </select>
+            </div>
+          </div>
+        </template>
+      </div>
+      <p x-show="waitlistError" class="text-xs text-red-500 mb-3" x-text="waitlistError"></p>
+      <div class="flex gap-3">
+        <button @click="showWaitlistModal=false" class="flex-1 border border-gray-300 py-2 rounded-xl text-sm">取消</button>
+        <button @click="submitWaitlist()" class="flex-1 bg-blue-500 text-white py-2 rounded-xl text-sm font-medium hover:bg-blue-600">送出候補</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waitlist Success Modal -->
+  <div x-show="waitlistSuccess" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+      <p class="text-5xl mb-4">📋</p>
+      <h2 class="text-xl font-bold mb-2">候補成功！</h2>
+      <p class="text-gray-500 text-sm mb-1" x-text="'商品：' + waitlistSuccess"></p>
+      <p class="text-gray-400 text-xs mb-6">若有庫存釋出，店家確認後會通知您</p>
+      <div class="flex gap-3">
+        <button @click="waitlistSuccess = ''" class="flex-1 border border-gray-300 py-2 rounded-xl text-sm">繼續瀏覽</button>
+        <a href="/orders" class="flex-1 bg-blue-500 text-white py-2 rounded-xl text-sm font-medium text-center">查看候補</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div x-show="showLogin" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showLogin = false">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+      <h2 class="text-xl font-bold text-center mb-6">登入後才能下單</h2>
+      <div class="flex flex-col gap-3">
+        <button @click="loginGoogle()" class="flex items-center justify-center gap-3 w-full border border-gray-300 rounded-xl py-3 text-sm font-medium hover:bg-gray-50">
+          <img src="https://www.google.com/favicon.ico" class="w-5 h-5"> 使用 Google 登入
+        </button>
+        <button @click="loginFacebook()" class="flex items-center justify-center gap-3 w-full bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700">
+          <span class="font-bold">f</span> 使用 Facebook 登入
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function storePage() {
+  const storeId = location.pathname.split('/').pop();
+  return {
+    storeId,
+    store: {},
+    products: [],
+    cart: [],
+    loading: true,
+    showCart: false,
+    showLogin: false,
+    note: '',
+    contactName: '',
+    contactPhone: '',
+    pickupDate: '',
+    pickupHour: '',
+    ordering: false,
+    orderError: '',
+    orderSuccess: false,
+    waitlistSuccess: '',
+    showWaitlistModal: false,
+    waitlistProduct: null,
+    waitlistQty: 1,
+    waitlistName: '',
+    waitlistPhone: '',
+    waitlistError: '',
+    waitlistOfferProduct: null,
+    waitlistPickupDate: '',
+    waitlistPickupHour: '',
+    purchasedQty: {},   // product_id → 帳號已購有效數量
+    user: JSON.parse(localStorage.getItem('user') || 'null'),
+
+    async init() {
+      await initFirebase();
+      firebase.auth().onAuthStateChanged(async (fbUser) => {
+        if (fbUser) {
+          const token = await fbUser.getIdToken();
+          this.user = await syncUser(token);
+          await Promise.all([this.loadProfile(), this.loadPurchasedQty()]);
+        }
+      });
+      await Promise.all([this.loadStore(), this.loadProducts()]);
+    },
+
+    async loadProfile() {
+      try {
+        const profile = await apiCall('GET', '/auth/me');
+        if (profile.contact_name && !this.contactName) this.contactName = profile.contact_name;
+        if (profile.contact_phone && !this.contactPhone) this.contactPhone = profile.contact_phone;
+      } catch(e) { /* 忽略 */ }
+    },
+
+    async loadPurchasedQty() {
+      try {
+        const orders = await apiCall('GET', '/orders/my');
+        const qty = {};
+        const active = ['pending','accepted','preparing','ready','completed'];
+        for (const o of orders) {
+          if (!active.includes(o.status)) continue;
+          for (const item of (o.items || [])) {
+            qty[item.product_id] = (qty[item.product_id] || 0) + item.qty;
+          }
+        }
+        this.purchasedQty = qty;
+      } catch(e) { /* 忽略 */ }
+    },
+
+    async loadStore() {
+      const res = await fetch(`/api/v1/stores/${this.storeId}`);
+      if (res.ok) this.store = await res.json();
+    },
+
+    async loadProducts() {
+      this.loading = true;
+      const res = await fetch(`/api/v1/stores/${this.storeId}/products`);
+      if (res.ok) this.products = await res.json();
+      this.loading = false;
+    },
+
+    get visibleProducts() {
+      const today = new Date().toISOString().split('T')[0];
+      return this.products.filter(p => {
+        if (p.is_active === false) return false;
+        if (p.sale_start && today < p.sale_start) return false;
+        if (p.sale_end && today > p.sale_end) return false;
+        return true;
+      });
+    },
+
+    get groupedProducts() {
+      return this.visibleProducts.reduce((groups, p) => {
+        const cat = p.category || '其他';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(p);
+        return groups;
+      }, {});
+    },
+
+    get cartCount() { return this.cart.reduce((s, i) => s + i.qty, 0); },
+    get cartTotal() { return this.cart.reduce((s, i) => s + i.price * i.qty, 0); },
+
+    // 計算可選取貨日期範圍（取購物車內商品最嚴格的交集）
+    get pickupDateMin() {
+      const today = new Date().toISOString().split('T')[0];
+      const dates = this.cart.map(i => i.pickup_start).filter(Boolean);
+      return dates.length ? dates.sort().reverse()[0] : today;
+    },
+    get pickupDateMax() {
+      const dates = this.cart.map(i => i.pickup_end).filter(Boolean);
+      return dates.length ? dates.sort()[0] : '';
+    },
+    get pickupDateRange() {
+      if (this.pickupDateMin || this.pickupDateMax)
+        return (this.pickupDateMin || '不限') + ' ~ ' + (this.pickupDateMax || '不限');
+      return '';
+    },
+    // 取貨時段（取購物車內商品的交集）
+    get pickupHours() {
+      let start = 0, end = 23;
+      for (const item of this.cart) {
+        if (item.pickup_hours_start != null) start = Math.max(start, item.pickup_hours_start);
+        if (item.pickup_hours_end != null) end = Math.min(end, item.pickup_hours_end);
+      }
+      const hours = [];
+      for (let h = start; h < end; h++) hours.push(h);
+      return hours.length ? hours : Array.from({length: 9}, (_, i) => 9 + i);
+    },
+
+    // 檢查新商品是否與購物車現有商品取貨時間相容
+    isPickupCompatible(product) {
+      if (this.cart.length === 0) return true;
+      // 日期交集檢查
+      const newStart = product.pickup_start || null;
+      const newEnd = product.pickup_end || null;
+      for (const item of this.cart) {
+        const iStart = item.pickup_start || null;
+        const iEnd = item.pickup_end || null;
+        // 若一方有日期限制，另一方沒有，視為相容（沒限制=任意日）
+        if (iStart && newEnd && newEnd < iStart) return false;
+        if (newStart && iEnd && iEnd < newStart) return false;
+      }
+      // 時段交集檢查
+      let start = product.pickup_hours_start ?? 0;
+      let end = product.pickup_hours_end ?? 23;
+      for (const item of this.cart) {
+        start = Math.max(start, item.pickup_hours_start ?? 0);
+        end = Math.min(end, item.pickup_hours_end ?? 23);
+      }
+      return start < end;
+    },
+
+    addToCart(product) {
+      if (!this.user) { this.showLogin = true; return; }
+      const max = product.max_per_person ?? null;
+      const already = this.purchasedQty[product.product_id] || 0;
+      const inCart = this.cart.find(i => i.product_id === product.product_id)?.qty || 0;
+      if (max && already + inCart >= max) {
+        const bought = already + inCart;
+        alert(`此商品每人限購 ${max} 份，您（含歷史訂單）已購買 ${bought} 份，無法再加購。`);
+        return;
+      }
+      const idx = this.cart.findIndex(i => i.product_id === product.product_id);
+      if (idx >= 0) {
+        this.cart[idx].qty++;
+        return;
+      }
+      if (!this.isPickupCompatible(product)) {
+        alert('此商品取貨時間與購物車內其他商品不同，請分開下單。');
+        return;
+      }
+      this.cart.push({
+        product_id: product.product_id,
+        name: product.name,
+        price: product.price,
+        qty: 1,
+        max_per_person: max,
+        pickup_start: product.pickup_start,
+        pickup_end: product.pickup_end,
+        pickup_hours_start: product.pickup_hours_start ?? 0,
+        pickup_hours_end: product.pickup_hours_end ?? 23,
+      });
+      this.showCart = true;
+    },
+
+    changeQty(idx, delta) {
+      if (delta > 0) {
+        const item = this.cart[idx];
+        const max = item.max_per_person;
+        const already = this.purchasedQty[item.product_id] || 0;
+        if (max && already + item.qty >= max) {
+          alert(`此商品每人限購 ${max} 份，您（含歷史訂單）已購買 ${already + item.qty} 份，無法再增加。`);
+          return;
+        }
+      }
+      this.cart[idx].qty += delta;
+      if (this.cart[idx].qty <= 0) this.cart.splice(idx, 1);
+    },
+
+    async placeOrder() {
+      if (!this.contactName.trim()) { this.orderError = '請填寫姓名'; return; }
+      if (!this.contactPhone.trim()) { this.orderError = '請填寫電話'; return; }
+      if (!this.pickupDate) { this.orderError = '請選擇取貨日期'; return; }
+      if (this.pickupHour === '' || this.pickupHour == null) { this.orderError = '請選擇取貨時段'; return; }
+      this.ordering = true;
+      this.orderError = '';
+      this.waitlistOfferProduct = null;
+      try {
+        await apiCall('POST', '/orders', {
+          store_id: this.storeId,
+          items: this.cart.map(i => ({ product_id: i.product_id, qty: i.qty, selected_options: {} })),
+          note: this.note,
+          pickup_type: 'takeout',
+          pickup_date: this.pickupDate,
+          pickup_hour: parseInt(this.pickupHour),
+          contact_name: this.contactName.trim(),
+          contact_phone: this.contactPhone.trim(),
+        });
+        // 下單成功後儲存聯絡資訊到個人資料
+        apiCall('PATCH', '/auth/profile', {
+          contact_name: this.contactName.trim(),
+          contact_phone: this.contactPhone.trim(),
+        }).catch(() => {});
+        this.cart = [];
+        this.note = '';
+        this.pickupDate = '';
+        this.pickupHour = '';
+        this.orderSuccess = true;
+      } catch(e) {
+        this.orderError = e.message;
+        // 若商品售完且開放候補，提示加入候補
+        if (e.message && e.message.includes('已售完')) {
+          await this.loadProducts();
+          const nameMatch = e.message.match(/「(.+?)」/);
+          if (nameMatch) {
+            const p = this.products.find(pr => pr.name === nameMatch[1] && pr.allow_waitlist);
+            if (p) this.waitlistOfferProduct = p;
+          }
+        }
+      } finally {
+        this.ordering = false;
+      }
+    },
+
+    openWaitlistModal(product) {
+      if (!this.user) { this.showLogin = true; return; }
+      this.waitlistProduct = product;
+      this.waitlistQty = 1;
+      this.waitlistName = this.contactName || '';
+      this.waitlistPhone = this.contactPhone || '';
+      this.waitlistPickupDate = '';
+      this.waitlistPickupHour = '';
+      this.waitlistError = '';
+      this.showWaitlistModal = true;
+    },
+
+    // 候補單取貨時段選項（依商品限制）
+    get waitlistPickupHours() {
+      const p = this.waitlistProduct;
+      if (!p) return [];
+      const start = p.pickup_hours_start ?? 9;
+      const end   = p.pickup_hours_end   ?? 18;
+      const hours = [];
+      for (let h = start; h < end; h++) hours.push(h);
+      return hours;
+    },
+
+    async submitWaitlist() {
+      if (!this.waitlistName.trim()) { this.waitlistError = '請填寫姓名'; return; }
+      if (!this.waitlistPhone.trim()) { this.waitlistError = '請填寫電話'; return; }
+      const hasDateLimit = this.waitlistProduct?.pickup_start || this.waitlistProduct?.pickup_end;
+      const hasHourLimit = this.waitlistProduct?.pickup_hours_start != null || this.waitlistProduct?.pickup_hours_end != null;
+      if ((hasDateLimit || hasHourLimit) && !this.waitlistPickupDate) { this.waitlistError = '請選擇取貨日期'; return; }
+      if ((hasDateLimit || hasHourLimit) && (this.waitlistPickupHour === '' || this.waitlistPickupHour == null)) { this.waitlistError = '請選擇取貨時段'; return; }
+      try {
+        await apiCall('POST', '/waitlist', {
+          store_id: this.storeId,
+          product_id: this.waitlistProduct.product_id,
+          qty: parseInt(this.waitlistQty) || 1,
+          contact_name: this.waitlistName.trim(),
+          contact_phone: this.waitlistPhone.trim(),
+          pickup_date: this.waitlistPickupDate || null,
+          pickup_hour: this.waitlistPickupHour !== '' ? parseInt(this.waitlistPickupHour) : null,
+        });
+        // 儲存聯絡資訊到個人資料
+        this.contactName = this.waitlistName.trim();
+        this.contactPhone = this.waitlistPhone.trim();
+        apiCall('PATCH', '/auth/profile', {
+          contact_name: this.contactName,
+          contact_phone: this.contactPhone,
+        }).catch(() => {});
+        this.showWaitlistModal = false;
+        this.waitlistSuccess = this.waitlistProduct.name;
+      } catch(e) {
+        this.waitlistError = e.message;
+      }
+    },
+
+    async loginGoogle() {
+      const fbUser = await loginWithGoogle();
+      const token = await fbUser.getIdToken();
+      this.user = await syncUser(token);
+      this.showLogin = false;
+    },
+    async loginFacebook() {
+      const fbUser = await loginWithFacebook();
+      const token = await fbUser.getIdToken();
+      this.user = await syncUser(token);
+      this.showLogin = false;
+    },
+  };
+}
+</script>
+</body>
+</html>
