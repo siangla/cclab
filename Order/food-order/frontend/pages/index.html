@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訂餐系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script src="/static/js/firebase-init.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div x-data="app()" x-init="init()">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="text-xl font-bold text-orange-500">🍱 訂餐平台</a>
+      <div class="flex items-center gap-3">
+        <template x-if="user">
+          <div class="flex items-center gap-3">
+            <img :src="user.photo_url || '/static/img/avatar.png'" class="w-8 h-8 rounded-full object-cover border">
+            <span class="text-sm font-medium text-gray-700" x-text="user.display_name"></span>
+            <template x-if="user.role === 'merchant'">
+              <a href="/merchant" class="text-sm bg-orange-50 text-orange-600 px-3 py-1 rounded-full font-medium hover:bg-orange-100">店家後台</a>
+            </template>
+            <a href="/orders" class="text-sm text-gray-600 hover:text-orange-500">我的訂單</a>
+            <button @click="logout()" class="text-sm text-gray-400 hover:text-red-500">登出</button>
+          </div>
+        </template>
+        <template x-if="!user">
+          <button @click="showLogin = true" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600">登入</button>
+        </template>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="bg-gradient-to-br from-orange-400 to-orange-600 text-white py-16 px-4 text-center">
+    <h1 class="text-4xl font-bold mb-3">好吃的就在附近</h1>
+    <p class="text-orange-100 mb-8">探索店家、輕鬆下單</p>
+    <div class="max-w-md mx-auto relative">
+      <input x-model="search" @keyup.enter="searchStores()" type="text" placeholder="搜尋店家..."
+        class="w-full px-5 py-3 rounded-xl text-gray-800 text-base shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300">
+      <button @click="searchStores()" class="absolute right-3 top-1/2 -translate-y-1/2 text-orange-400 hover:text-orange-600 text-xl">🔍</button>
+    </div>
+  </div>
+
+  <!-- Store List -->
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    <h2 class="text-xl font-bold text-gray-800 mb-6">所有店家</h2>
+
+    <div x-show="loading" class="text-center py-16 text-gray-400">載入中...</div>
+
+    <div x-show="!loading && stores.length === 0" class="text-center py-16 text-gray-400">
+      <p class="text-5xl mb-4">🏪</p>
+      <p>目前還沒有店家，快去開店吧！</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <template x-for="store in filteredStores" :key="store.store_id">
+        <a :href="'/store/' + store.store_id"
+           class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
+          <div class="h-36 bg-orange-50 flex items-center justify-center">
+            <template x-if="store.logo_url">
+              <img :src="store.logo_url" class="w-full h-full object-cover">
+            </template>
+            <template x-if="!store.logo_url">
+              <span class="text-5xl">🍱</span>
+            </template>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-bold text-gray-800 text-base" x-text="store.name"></h3>
+              <span x-show="store.is_open" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">營業中</span>
+              <span x-show="!store.is_open" class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">休息中</span>
+            </div>
+            <p class="text-xs text-gray-500 truncate" x-text="store.description || '歡迎光臨'"></p>
+            <p class="text-xs text-orange-400 mt-1" x-text="store.category || ''"></p>
+          </div>
+        </a>
+      </template>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div x-show="showLogin" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showLogin = false">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-2 text-center">登入</h2>
+      <p class="text-sm text-gray-500 text-center mb-8">使用第三方帳號快速登入</p>
+
+      <div class="flex flex-col gap-3">
+        <button @click="loginGoogle()" :disabled="loggingIn"
+          class="flex items-center justify-center gap-3 w-full border border-gray-300 rounded-xl py-3 text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50">
+          <img src="https://www.google.com/favicon.ico" class="w-5 h-5">
+          使用 Google 帳號登入
+        </button>
+        <button @click="loginFacebook()" :disabled="loggingIn"
+          class="flex items-center justify-center gap-3 w-full bg-blue-600 text-white rounded-xl py-3 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+          <span class="text-lg font-bold">f</span>
+          使用 Facebook 帳號登入
+        </button>
+        <p class="text-xs text-center text-gray-400 mt-2">LINE 登入即將推出</p>
+      </div>
+
+      <p x-show="loginError" class="text-red-500 text-sm text-center mt-4" x-text="loginError"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function app() {
+  return {
+    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    stores: [],
+    loading: true,
+    search: '',
+    showLogin: false,
+    loggingIn: false,
+    loginError: '',
+
+    async init() {
+      await initFirebase();
+      firebase.auth().onAuthStateChanged(async (fbUser) => {
+        if (fbUser) {
+          const token = await fbUser.getIdToken();
+          this.user = await syncUser(token);
+          await this.loadStores(); // 登入後重新載入，才能包含自己的店
+        }
+      });
+      await this.loadStores();
+    },
+
+    async loadStores() {
+      this.loading = true;
+      try {
+        const res = await fetch('/api/v1/stores');
+        const publicStores = await res.json();
+        // 若已登入，把自己的店（任何 status）也合併進來
+        let allStores = [...publicStores];
+        if (this.user) {
+          try {
+            const mine = await apiCall('GET', '/stores/mine');
+            if (mine && mine.store_id && !allStores.find(s => s.store_id === mine.store_id)) {
+              allStores = [mine, ...allStores];
+            }
+          } catch(e) { /* 沒有店就略過 */ }
+        }
+        this.stores = allStores;
+      } catch(e) {
+        console.error(e);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    get filteredStores() {
+      if (!this.search.trim()) return this.stores;
+      const q = this.search.trim().toLowerCase();
+      return this.stores.filter(s =>
+        (s.name || '').toLowerCase().includes(q) ||
+        (s.category || '').toLowerCase().includes(q) ||
+        (s.description || '').toLowerCase().includes(q)
+      );
+    },
+
+    searchStores() { /* 前端即時篩選，不需重新載入 */ },
+
+    async loginGoogle() {
+      this.loggingIn = true;
+      this.loginError = '';
+      try {
+        const fbUser = await loginWithGoogle();
+        const token = await fbUser.getIdToken();
+        this.user = await syncUser(token);
+        this.showLogin = false;
+      } catch(e) {
+        this.loginError = e.message || '登入失敗，請再試一次';
+      } finally {
+        this.loggingIn = false;
+      }
+    },
+
+    async loginFacebook() {
+      this.loggingIn = true;
+      this.loginError = '';
+      try {
+        const fbUser = await loginWithFacebook();
+        const token = await fbUser.getIdToken();
+        this.user = await syncUser(token);
+        this.showLogin = false;
+      } catch(e) {
+        this.loginError = e.message || '登入失敗，請再試一次';
+      } finally {
+        this.loggingIn = false;
+      }
+    },
+
+    logout,
+  };
+}
+</script>
+</body>
+</html>

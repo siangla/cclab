@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 共用函式 ────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isMerchant() {
+      return isAuth() && getUserRole() == 'merchant';
+    }
+
+    function isAdmin() {
+      return isAuth() && getUserRole() == 'admin';
+    }
+
+    function isStoreOwner(storeId) {
+      return isAuth() &&
+        get(/databases/$(database)/documents/stores/$(storeId)).data.owner_id == request.auth.uid;
+    }
+
+    // ── users ────────────────────────────────────────────────────
+    match /users/{uid} {
+      // 本人可讀寫自己的資料；admin 可讀所有
+      allow read: if isOwner(uid) || isAdmin();
+      // 建立：本人（登入後初始化）
+      allow create: if isOwner(uid);
+      // 更新：本人只能改有限欄位，不可自行改 role
+      allow update: if isOwner(uid) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+        isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── stores ───────────────────────────────────────────────────
+    match /stores/{storeId} {
+      // 所有人可瀏覽 active 店家；store owner 可讀自己的（含 pending）
+      allow read: if resource.data.status == 'active' ||
+                     isStoreOwner(storeId) ||
+                     isAdmin();
+      // 建立：已登入的 merchant 申請（status 必須是 pending）
+      allow create: if isMerchant() &&
+        request.resource.data.owner_id == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      // 更新：store owner 可改（但不可改 owner_id / status）；admin 可改全部
+      allow update: if (isStoreOwner(storeId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['owner_id', 'status'])) ||
+        isAdmin();
+      allow delete: if isAdmin();
+
+      // ── products（subcollection）────────────────────────────────
+      match /products/{productId} {
+        allow read: if true;   // 商品公開可讀
+        allow create, update: if isStoreOwner(storeId);
+        allow delete: if isStoreOwner(storeId);
+      }
+    }
+
+    // ── orders ───────────────────────────────────────────────────
+    match /orders/{orderId} {
+      // 買家讀自己的訂單；店家讀自己店的訂單；admin 全讀
+      allow read: if isAuth() && (
+        resource.data.buyer_id == request.auth.uid ||
+        isStoreOwner(resource.data.store_id) ||
+        isAdmin()
+      );
+
+      // 買家下單（建立）：buyer_id 必須是本人，status 必須是 pending
+      allow create: if isAuth() &&
+        request.resource.data.buyer_id == request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      // 更新：買家或店家，後端 API 負責驗證狀態機，前端只能透過 API 操作
+      // 這裡允許買家和店家更新（狀態驗證由 Cloud Function / API 負責）
+      allow update: if isAuth() && (
+        resource.data.buyer_id == request.auth.uid ||
+        isStoreOwner(resource.data.store_id) ||
+        isAdmin()
+      );
+
+      // 刪除：只有店家可刪除已取消的訂單
+      allow delete: if isStoreOwner(resource.data.store_id) &&
+        resource.data.status == 'cancelled';
+    }
+
+    // ── notifications ────────────────────────────────────────────
+    match /notifications/{notifId} {
+      allow read: if isAuth() && resource.data.user_id == request.auth.uid;
+      allow create: if isAdmin(); // 僅後端寫入
+      allow update: if isAuth() && resource.data.user_id == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
+    }
+
+    // ── waitlist ─────────────────────────────────────────────────
+    match /waitlist/{waitlistId} {
+      // 買家讀自己的候補；店家讀自己店的候補
+      allow read: if isAuth() && (
+        resource.data.buyer_id == request.auth.uid ||
+        isStoreOwner(resource.data.store_id) ||
+        isAdmin()
+      );
+      // 建立：本人，status 必須是 waiting
+      allow create: if isAuth() &&
+        request.resource.data.buyer_id == request.auth.uid &&
+        request.resource.data.status == 'waiting';
+      // 更新：買家只能取消自己的；店家可確認或取消
+      allow update: if isAuth() && (
+        (resource.data.buyer_id == request.auth.uid &&
+          request.resource.data.status == 'cancelled') ||
+        isStoreOwner(resource.data.store_id) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── reviews ──────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuth() &&
+        request.resource.data.buyer_id == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+  }
+}
