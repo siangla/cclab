@@ -330,7 +330,7 @@ function cashCalc(t){
 function tripTotal(t){
   const flights=t.flights.reduce((s,f)=>s+num(f.total),0);
   const hotels=t.hotels.reduce((s,h)=>s+num(h.total),0);
-  const misc=t.misc.reduce((s,m)=>s+(num(m.total)||num(m.unit)*t.people),0);
+  const misc=t.misc.reduce((s,m)=>s+(num(m.unit)?num(m.unit)*t.people:num(m.total)),0);
   const card=t.card.reduce((s,c)=>s+num(c.twd)+num(c.fee),0);
   const cash=cashCalc(t).spentTwd;
   return {flights,hotels,misc,card,cash,total:flights+hotels+misc+card+cash};
@@ -365,14 +365,14 @@ function renderExpense(body,t){
     {label:'單日價',calc:r=>{const n=dayCount(r.ds,r.de)-1;return n>0?fmt(num(r.total)/n):'-'}},
     {k:'checkin',label:'Check In',w:'80px'},{k:'checkout',label:'Check Out',w:'80px'},{k:'note',label:'備註'}
   ],t.hotels,()=>({ds:t.dateStart,de:t.dateEnd})),`小計 NT$ ${fmt(tot.hotels)}`));
-  c.appendChild(sect('網路 / 保險 / 票券 / 其他',makeTable([
-    {k:'cat',label:'類別',t:'sel',opts:['網路','保險','票券','其他'],w:'80px'},
-    {k:'desc',label:'說明'},{k:'vendor',label:'供應商/備註'},
-    {k:'unit',label:'單價/人',t:'num',w:'85px'},
-    {k:'total',label:'總計NT$',t:'num',w:'90px',ph:'空=單價×人數'},
-    {label:'計',calc:r=>fmt(num(r.total)||num(r.unit)*t.people)},
-    {k:'link',label:'連結'}
-  ],t.misc,()=>({cat:'其他'})),`小計 NT$ ${fmt(tot.misc)}`));
+  t.misc.forEach(m=>{if(m.cat==='票券')m.cat='其他';if(num(m.unit))m.total=Math.round(num(m.unit)*t.people)});
+  c.appendChild(sect('網路 / 保險 / 其他',makeTable([
+    {k:'cat',label:'類別',t:'sel',opts:['網路','保險','其他'],w:'80px'},
+    {k:'desc',label:'說明'},{k:'vendor',label:'供應商'},
+    {k:'unit',label:'單價/人',t:'num',w:'85px',ph:'填了自動算總計'},
+    {k:'total',label:'總計NT$',t:'num',w:'90px'},
+    {k:'link',label:'備註'}
+  ],t.misc,()=>({cat:'其他'})),`小計 NT$ ${fmt(tot.misc)}｜有填單價/人時，總計自動＝單價×${t.people}人`));
   body.appendChild(c);
 
   const cc=cashCalc(t);
@@ -396,6 +396,7 @@ function renderExpense(body,t){
   c2.appendChild(sect('刷卡',makeTable([
     {k:'desc',label:'說明'},{k:'jpy',label:esc(cu),t:'num',w:'100px'},
     {k:'twd',label:'台幣 NT$',t:'num',w:'100px'},{k:'fee',label:'手續費',t:'num',w:'80px'},
+    {label:'單價/人 NT$',calc:r=>fmt((num(r.twd)+num(r.fee))/t.people)},
     {label:'實質匯率',calc:r=>num(r.jpy)?fmt1((num(r.twd)+num(r.fee))/num(r.jpy)):'-'}
   ],t.card,()=>({})),`小計 NT$ ${fmt(tot.card)}（含手續費）`));
   body.appendChild(c2);
@@ -840,13 +841,13 @@ function exportTripXlsx(){
   t.flights.forEach(f=>fx.push([f.leg,f.date,f.from,f.dep,f.to,f.arr,f.baggage,num(f.total),num(f.total)/t.people]));
   fx.push([],['飯店','日期起','日期迄','總計NT$','Check In','Check Out','備註']);
   t.hotels.forEach(h=>fx.push([h.name,h.ds,h.de,num(h.total),h.checkin,h.checkout,h.note]));
-  fx.push([],['類別','說明','供應商','單價/人','總計NT$','連結']);
-  t.misc.forEach(m=>fx.push([m.cat,m.desc,m.vendor,num(m.unit),num(m.total)||num(m.unit)*t.people,m.link]));
+  fx.push([],['類別','說明','供應商','單價/人','總計NT$','備註']);
+  t.misc.forEach(m=>fx.push([m.cat,m.desc,m.vendor,num(m.unit),num(m.unit)?num(m.unit)*t.people:num(m.total),m.link]));
   fx.push([],['現金',cu,'台幣','匯率'],['前次餘額',num(t.cash.prev),num(t.cash.prev)*num(t.cash.prevRate),t.cash.prevRate]);
   t.cash.atm.forEach(a=>fx.push([a.label||'ATM換匯',num(a.jpy),num(a.twd),num(a.jpy)?num(a.twd)/num(a.jpy):'']));
   fx.push(['花費',num(t.cash.spent),Math.round(cc.spentTwd),cc.avg],['餘額',cc.balance]);
-  fx.push([],['刷卡',cu,'台幣','手續費','實質匯率']);
-  t.card.forEach(c=>fx.push([c.desc,num(c.jpy),num(c.twd),num(c.fee),num(c.jpy)?(num(c.twd)+num(c.fee))/num(c.jpy):'']));
+  fx.push([],['刷卡',cu,'台幣','手續費','單價/人NT$','實質匯率']);
+  t.card.forEach(c=>fx.push([c.desc,num(c.jpy),num(c.twd),num(c.fee),Math.round((num(c.twd)+num(c.fee))/t.people),num(c.jpy)?(num(c.twd)+num(c.fee))/num(c.jpy):'']));
   add('費用',fx);
   t.days.forEach(d=>{
     const aoa=[['日期',d.date,'行程計畫',d.title,'','單日總預算('+t.people+'人)',dayBudget(t,d)],
@@ -1051,7 +1052,7 @@ function parseExpense(t,aoa){
     }else if(sec==='card'&&(num(r[4])||num(r[5]))){
       t.card.push({desc:a,jpy:num(r[4])||num(r[5]),twd:num(r[12]),fee:num(r[13])});
     }else if(sec==='tk'&&(num(r[12])||num(r[10]))){
-      t.misc.push({cat:'票券',desc:a,vendor:'',unit:0,total:num(r[12])||num(r[10]),link:xs(r[14])});
+      t.misc.push({cat:'其他',desc:a,vendor:'',unit:0,total:num(r[12])||num(r[10]),link:xs(r[14])});
     }
   });
 }
