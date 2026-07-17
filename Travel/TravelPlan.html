@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2f6fed">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="旅行規劃">
+<title>旅行規劃</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fa; --card:#fff; --ink:#25324b; --sub:#7a869c; --line:#e4e9f2;
+  --acc:#2f6fed; --acc2:#0ea5a4; --warn:#e8590c; --ok:#2b8a3e;
+  --r:12px; --sh:0 1px 4px rgba(30,45,80,.08);
+  --hov:#f0f3f9; --chip:#eef1f7; --rowhov:#f7f9fd; --tbg:#eafaf8; --nbg:#fff9ec;
+  --gridh:#f6f8fc; --line2:#f0f3f8; --accsoft:#e7edfb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",sans-serif;font-size:14px}
+h1,h2,h3{margin:.2em 0}
+a{color:var(--acc)}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;font-size:13px}
+input,select,textarea{font-family:inherit;font-size:13px;color:var(--ink);
+  border:1px solid transparent;border-radius:6px;background:transparent;padding:3px 5px;width:100%}
+input:hover,select:hover,textarea:hover{background:var(--hov)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);background:var(--card)}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--acc)}
+.btn{background:var(--acc);color:#fff;padding:7px 14px}
+.btn.sec{background:var(--accsoft);color:var(--acc)}
+.btn.ghost{background:transparent;color:var(--sub);border:1px dashed var(--line)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn.danger{background:#fdecec;color:#c92a2a}
+.topbar{background:var(--card);border-bottom:1px solid var(--line);padding:10px 20px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.topbar .logo{font-size:17px;font-weight:700;color:var(--acc);cursor:pointer;white-space:nowrap}
+#app{max-width:1200px;margin:0 auto;padding:18px 20px 80px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:14px}
+.tripcard{cursor:pointer;transition:.15s;border:1px solid var(--line)}
+.tripcard:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(30,45,80,.13)}
+.tripcard .nm{font-size:16px;font-weight:700}
+.tripcard .meta{color:var(--sub);font-size:12px;margin-top:4px}
+.tripcard .amt{font-size:20px;font-weight:700;color:var(--acc);margin-top:8px}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;background:var(--accsoft);color:var(--acc)}
+.badge.done{background:var(--tbg);color:var(--ok)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{padding:8px 14px;border-radius:8px;background:transparent;color:var(--sub);font-size:14px}
+.tabs button.on{background:var(--acc);color:#fff;font-weight:600}
+.sect{margin-bottom:20px}
+.sect>h3{font-size:14px;color:var(--acc);border-left:3px solid var(--acc);padding-left:8px;margin-bottom:8px}
+table.et{width:100%;border-collapse:collapse}
+table.et th{font-size:12px;color:var(--sub);font-weight:600;text-align:left;
+  padding:5px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+table.et td{padding:2px 4px;border-bottom:1px solid var(--line2);vertical-align:middle}
+table.et td.calc{color:var(--acc2);font-weight:600;white-space:nowrap;padding:2px 8px}
+table.et tr:hover td{background:var(--rowhov)}
+.rowdel{opacity:.25;background:none;color:#c92a2a;font-size:14px;padding:0 4px}
+tr:hover .rowdel,.item:hover .rowdel{opacity:1}
+.tblwrap{overflow-x:auto}
+.stat{display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+.stat .b{font-size:26px;font-weight:800;color:var(--acc)}
+.stat .l{font-size:12px;color:var(--sub)}
+.daytabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.daytabs button{padding:6px 12px;border-radius:8px;background:var(--chip);color:var(--sub)}
+.daytabs button.on{background:var(--acc2);color:#fff;font-weight:600}
+.item{display:flex;gap:8px;align-items:flex-start;padding:7px 6px;border-radius:8px;margin-bottom:2px}
+.item:hover{background:var(--rowhov)}
+.item .tm{width:216px;flex:none;display:flex;gap:2px}
+.item .tm input{text-align:center;padding:3px 1px;font-size:12px;min-width:0}
+.item .ic{flex:none;width:26px;text-align:center;font-size:15px;padding-top:3px}
+.item .bd{flex:1;min-width:0}
+.item .ops{flex:none;display:flex;gap:2px;opacity:.2}
+.item:hover .ops{opacity:1}
+.item .ops button{background:var(--chip);color:var(--sub);padding:2px 7px;font-size:12px}
+.item .drag{cursor:grab;color:var(--sub);flex:none;width:30px;min-height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:.3;user-select:none;-webkit-user-select:none;touch-action:none}
+.item .drag:active{cursor:grabbing}
+@media(max-width:700px){.item .drag{opacity:.6;font-size:16px}}
+.item:hover .drag{opacity:1}
+.item.dragging{opacity:.35}
+.item.transit{background:var(--tbg);border-left:3px solid var(--acc2)}
+.item.note{background:var(--nbg);border-left:3px solid #f0b429}
+.item .sub{display:flex;gap:6px;margin-top:2px;flex-wrap:wrap}
+.item .sub input{font-size:12px;color:var(--sub)}
+.pkcat{margin-bottom:14px}
+.pkcat h4{margin:4px 0;color:var(--acc2)}
+.pkrow{display:flex;align-items:center;gap:8px;padding:2px 4px;border-radius:6px}
+.pkrow:hover{background:var(--rowhov)}
+.pkrow .done{text-decoration:line-through;color:var(--sub)}
+.prog{height:9px;background:var(--chip);border-radius:99px;overflow:hidden;flex:1}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));border-radius:99px}
+.shopcard{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.shopcard .hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.shopcard .hd input.nm{font-weight:700;font-size:15px;flex:1;min-width:140px}
+.ovgrid{display:grid;overflow-x:auto;border:1px solid var(--line);border-radius:10px;font-size:12px}
+.ovgrid>div{padding:4px 6px;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2);min-width:110px}
+.ovgrid .hh{background:var(--gridh);font-weight:700;text-align:center;min-width:48px;color:var(--sub)}
+.ovgrid .dh{background:var(--acc);color:#fff;font-weight:700;text-align:center;position:sticky;top:0}
+.ovgrid .cell b{color:var(--acc)}
+.pill{display:inline-block;background:var(--accsoft);border-radius:6px;padding:1px 6px;margin:1px 0;font-size:11px}
+.pill.t{background:var(--tbg)}
+.toolrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.muted{color:var(--sub);font-size:12px}
+dialog{border:none;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.2);padding:20px;min-width:320px}
+dialog::backdrop{background:rgba(20,30,60,.35)}
+dialog input,dialog select{border:1px solid var(--line);background:#fff;margin:4px 0;padding:7px}
+canvas#pie{max-width:220px}
+.legend{font-size:12px;display:flex;flex-direction:column;gap:3px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+@media(max-width:700px){.item{flex-wrap:wrap}.item .tm{width:160px;flex-wrap:wrap}#app{padding:10px 8px 60px}}
+@media print{
+  .topbar,.tabs,.daytabs,.toolrow,.ops,.rowdel,button{display:none!important}
+  body{background:#fff}.card{box-shadow:none;border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo" onclick="goHome()">✈ 旅行規劃</span>
+  <span id="crumb" class="muted"></span>
+  <span style="flex:1"></span>
+  <select id="themeSel" title="佈景主題" style="width:auto;border:1px solid var(--line)"></select>
+  <button id="installBtn" class="btn sm" style="display:none">⬇ 安裝APP</button>
+  <span id="topbtns"></span>
+</div>
+<div id="app"></div>
+<input type="file" id="fileXlsx" accept=".xlsx,.xlsm" style="display:none">
+<input type="file" id="fileJson" accept=".json" style="display:none">
+
+<script>
+/* ============ 工具 ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const num=v=>{const n=parseFloat(String(v).replace(/,/g,''));return isNaN(n)?0:n};
+const fmt=n=>Math.round(n).toLocaleString('zh-TW');
+const fmt1=n=>n.toLocaleString('zh-TW',{maximumFractionDigits:4});
+const today=()=>new Date().toISOString().slice(0,10);
+const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+function dayCount(a,b){if(!a||!b)return 0;return Math.round((new Date(b)-new Date(a))/864e5)+1}
+function wk(d){return d?'日一二三四五六'[new Date(d+'T00:00').getDay()]:''}
+function mmdd(d){return d?d.slice(5).replace('-','/'):''}
+
+/* ============ 資料 ============ */
+const KEY='travelPlannerV1';
+let DB=load();
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.trips)return d}catch(e){}
+  return {trips:[]};
+}
+function save(){
+  const s=JSON.stringify(DB);
+  try{localStorage.setItem(KEY,s)}catch(e){alert('儲存失敗：空間不足，請先匯出 JSON 備份！');return}
+  if(s.length>4.2e6&&!save.warned){save.warned=1;alert('資料接近瀏覽器容量上限，建議匯出 JSON 備份。')}
+}
+const PACK_TPL=[
+  ['盥洗用品',['牙刷','牙膏','洗面乳','卸妝乳','乳液','保養液','梳子','毛巾','化妝品','面膜']],
+  ['衣著',['拖鞋','襪子','上衣','褲子','睡衣','內衣（褲）','外套','帽子']],
+  ['重要物品',['護照','護照影本','錢包','日幣','信用卡','手機','行動電源','充電線','轉接頭','網卡/WiFi機','常備藥','筆']],
+];
+function newTrip(name){
+  const t={id:uid(),name:name||'新旅行',dateStart:today(),dateEnd:today(),people:2,status:'規劃中',rate:0.22,cur:'外幣',
+    flights:[],hotels:[],misc:[],card:[],
+    cash:{prev:0,prevRate:0.22,atm:[],spent:0},
+    days:[],packing:[],gifts:[],shops:[],shopping:[],refs:[]};
+  PACK_TPL.forEach(([c,items])=>items.forEach(n=>t.packing.push({cat:c,name:n,done:false,owner:''})));
+  return t;
+}
+const trip=()=>DB.trips.find(t=>t.id===curTrip);
+const jpy2twd=(j,t)=>num(j)*num((t||trip()).rate);
+const curN=t=>(t&&t.cur)||'外幣';
+
+/* ============ 佈景主題 ============ */
+const THEMES={
+'海洋藍':{},
+'抹茶和風':{'--bg':'#f4f6ef','--card':'#ffffff','--ink':'#33402e','--sub':'#7d8a74','--line':'#e2e7d8','--line2':'#edf0e4','--acc':'#4a7c59','--acc2':'#8a9a2e','--accsoft':'#e4eee2','--hov':'#eef2e6','--chip':'#e9eddd','--rowhov':'#f4f7ec','--tbg':'#e8f3e4','--nbg':'#faf3dc','--gridh':'#f0f3e7'},
+'奶茶暖陽':{'--bg':'#faf5ef','--card':'#ffffff','--ink':'#4a3b30','--sub':'#a08b7a','--line':'#eee2d4','--line2':'#f5ece1','--acc':'#b5764a','--acc2':'#c99a3f','--accsoft':'#f5e7d8','--hov':'#f6ede2','--chip':'#f1e5d6','--rowhov':'#faf1e7','--tbg':'#f3ecdc','--nbg':'#fdf3dd','--gridh':'#f7efe5'},
+'夜間模式':{'--bg':'#151a23','--card':'#1f2633','--ink':'#e7ebf3','--sub':'#8e9ab0','--line':'#323c4e','--line2':'#2a3342','--acc':'#5f8fff','--acc2':'#2fbdb3','--accsoft':'#263a5e','--hov':'#2a3342','--chip':'#2b3546','--rowhov':'#252e3d','--tbg':'#1d3330','--nbg':'#33301c','--gridh':'#262f3e','--sh':'0 1px 4px rgba(0,0,0,.4)'}
+};
+function applyTheme(){
+  const th=THEMES[DB.theme]||{};const rs=document.documentElement.style;
+  rs.cssText='';for(const[k,v]of Object.entries(th))rs.setProperty(k,v);
+}
+
+/* ============ 路由/渲染 ============ */
+let view='home',curTrip=null,curTab='overview',curDay=0,dragIdx=null;
+function goHome(){view='home';curTrip=null;render()}
+function openTrip(id){view='trip';curTrip=id;curTab='overview';curDay=0;render()}
+function setTab(t){curTab=t;render()}
+function rerender(){const y=window.scrollY;render();window.scrollTo(0,y)}
+function render(){
+  const app=$('#app');app.innerHTML='';
+  $('#crumb').textContent=view==='trip'?trip().name:'';
+  $('#topbtns').innerHTML=view==='trip'
+    ?`<button class="btn sec sm" onclick="exportTripXlsx()">⬇ 匯出 Excel</button>
+      <button class="btn sec sm" onclick="window.print()">🖨 列印</button>`
+    :`<button class="btn sec sm" onclick="exportJson()">⬇ JSON 備份</button>
+      <button class="btn sec sm" onclick="$('#fileJson').click()">⬆ JSON 還原</button>`;
+  if(view==='home')renderHome(app);else renderTrip(app);
+}
+
+/* ============ 首頁 ============ */
+function renderHome(app){
+  const bar=el('div','toolrow');
+  bar.innerHTML=`<button class="btn" onclick="addTripDlg()">＋ 新增旅行</button>
+    <button class="btn sec" onclick="$('#fileXlsx').click()">⬆ 匯入 Excel（本站匯出檔或原手作格式）</button>
+    <span class="muted">資料儲存於此瀏覽器，建議定期 JSON 備份</span>`;
+  app.appendChild(bar);
+  const g=el('div','grid');g.style.gridTemplateColumns='repeat(auto-fill,minmax(260px,1fr))';
+  if(!DB.trips.length)app.appendChild(el('div','card muted','尚無旅行。點「新增旅行」開始，或匯入現有的 Excel 檔。'));
+  DB.trips.forEach(t=>{
+    const tot=tripTotal(t);
+    const c=el('div','card tripcard');
+    c.innerHTML=`<div class="nm">${esc(t.name)} <span class="badge ${t.status==='已完成'?'done':''}">${esc(t.status)}</span></div>
+      <div class="meta">${t.dateStart} ～ ${t.dateEnd}（${dayCount(t.dateStart,t.dateEnd)}天 / ${t.people}人）</div>
+      <div class="meta">${t.days.length} 個行程日 · ${t.shops.length} 家店 · 打包 ${packPct(t)}%</div>
+      <div class="amt">NT$ ${fmt(tot.total)}</div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <button class="btn sm sec" onclick="event.stopPropagation();renameTrip('${t.id}')">改名</button>
+        <button class="btn sm sec" onclick="event.stopPropagation();dupTrip('${t.id}')">複製</button>
+        <button class="btn sm danger" onclick="event.stopPropagation();delTrip('${t.id}')">刪除</button>
+      </div>`;
+    c.onclick=()=>openTrip(t.id);
+    g.appendChild(c);
+  });
+  app.appendChild(g);
+}
+function addTripDlg(){
+  const n=prompt('旅行名稱？','新旅行');if(n===null)return;
+  const t=newTrip(n.trim()||'新旅行');DB.trips.unshift(t);save();openTrip(t.id);
+}
+function renameTrip(id){
+  const t=DB.trips.find(x=>x.id===id);const n=prompt('新名稱',t.name);
+  if(n){t.name=n.trim();save();rerender()}
+}
+function dupTrip(id){
+  const t=DB.trips.find(x=>x.id===id);
+  const c=JSON.parse(JSON.stringify(t));c.id=uid();c.name=t.name+'（副本）';c.status='規劃中';
+  c.packing.forEach(p=>p.done=false);c.shopping.forEach(p=>p.done=false);c.gifts.forEach(p=>p.done=false);
+  DB.trips.unshift(c);save();rerender();
+}
+function delTrip(id){
+  const t=DB.trips.find(x=>x.id===id);
+  if(confirm(`確定刪除「${t.name}」？無法復原。`)){DB.trips=DB.trips.filter(x=>x.id!==id);save();rerender()}
+}
+function packPct(t){
+  const n=t.packing.length;return n?Math.round(t.packing.filter(p=>p.done).length/n*100):0;
+}
+
+/* ============ 通用可編輯表格 ============ */
+// cols: {k,label,t:'text|num|date|time|check|sel',opts,w,calc,ph}
+function makeTable(cols,arr,newRow,onChange){
+  const wrap=el('div','tblwrap');
+  const table=el('table','et');
+  const thr=el('tr');cols.forEach(c=>{const th=el('th',null,esc(c.label));if(c.w)th.style.width=c.w;thr.appendChild(th)});
+  thr.appendChild(el('th'));
+  table.appendChild(thr);
+  arr.forEach((row,i)=>{
+    const tr=el('tr');
+    cols.forEach(c=>{
+      const td=el('td');
+      if(c.calc){td.className='calc';td.innerHTML=c.calc(row)??'';}
+      else{
+        let inp;
+        if(c.t==='sel'){inp=el('select');c.opts.forEach(o=>{const op=el('option',null,esc(o));op.value=o;inp.appendChild(op)});inp.value=row[c.k]??c.opts[0];}
+        else if(c.t==='check'){inp=el('input');inp.type='checkbox';inp.checked=!!row[c.k];}
+        else{inp=el('input');inp.type=c.t==='num'?'number':(c.t||'text');inp.value=row[c.k]??'';if(c.ph)inp.placeholder=c.ph;}
+        if(c.t==='num')inp.step='any';
+        inp.onchange=()=>{row[c.k]=c.t==='check'?inp.checked:(c.t==='num'?num(inp.value):inp.value);save();(onChange||rerender)()};
+        td.appendChild(inp);
+      }
+      if(c.w)td.style.width=c.w;
+      tr.appendChild(td);
+    });
+    const tdd=el('td');
+    const db=el('button','rowdel','✕');db.onclick=()=>{arr.splice(i,1);save();rerender()};
+    tdd.appendChild(db);tr.appendChild(tdd);
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+  if(newRow){
+    const add=el('button','btn ghost sm','＋ 新增');add.style.marginTop='6px';
+    add.onclick=()=>{arr.push(newRow());save();rerender()};
+    wrap.appendChild(add);
+  }
+  return wrap;
+}
+function sect(title,node,extra){
+  const s=el('div','sect');s.appendChild(el('h3',null,esc(title)+(extra?` <span class="muted" style="font-weight:400">${extra}</span>`:'')));
+  s.appendChild(node);return s;
+}
+
+/* ============ 旅行工作區 ============ */
+const TABS=[['overview','📋 總覽'],['expense','💰 費用'],['days','🗓 每日行程'],['packing','🎒 攜帶物品'],['shops','🍜 店家'],['shopping','🛍 購物清單'],['refs','🔗 參考資料']];
+function renderTrip(app){
+  const t=trip();
+  const head=el('div','card');
+  head.innerHTML=`<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+    <input style="font-size:19px;font-weight:800;width:220px" value="${esc(t.name)}" onchange="trip().name=this.value;save();rerender()">
+    <label class="muted">起 <input type="date" style="width:135px" value="${t.dateStart}" onchange="trip().dateStart=this.value;save();rerender()"></label>
+    <label class="muted">迄 <input type="date" style="width:135px" value="${t.dateEnd}" onchange="trip().dateEnd=this.value;save();rerender()"></label>
+    <label class="muted">人數 <input type="number" min="1" style="width:52px" value="${t.people}" onchange="trip().people=Math.max(1,num(this.value));save();rerender()"></label>
+    <label class="muted">幣別 <input style="width:58px" value="${esc(curN(t))}" onchange="trip().cur=this.value.trim()||'外幣';save();rerender()"></label>
+    <label class="muted">匯率(${esc(curN(t))}→NT$) <input type="number" step="any" style="width:75px" value="${t.rate}" onchange="trip().rate=num(this.value);save();rerender()"></label>
+    <select style="width:95px" onchange="trip().status=this.value;save();rerender()">
+      <option${t.status==='規劃中'?' selected':''}>規劃中</option><option${t.status==='已完成'?' selected':''}>已完成</option>
+    </select></div>`;
+  app.appendChild(head);
+  const tabs=el('div','tabs');
+  TABS.forEach(([k,label])=>{
+    const b=el('button',curTab===k?'on':'',label);b.onclick=()=>setTab(k);tabs.appendChild(b);
+  });
+  app.appendChild(tabs);
+  const body=el('div');app.appendChild(body);
+  ({overview:renderOverview,expense:renderExpense,days:renderDays,packing:renderPacking,
+    shops:renderShops,shopping:renderShopping,refs:renderRefs})[curTab](body,t);
+}
+
+/* ============ 金額計算 ============ */
+function dayBudget(t,d){return d.items.reduce((s,it)=>s+num(it.budget),0)*t.people}
+function cashCalc(t){
+  const c=t.cash;
+  const rows=[{jpy:num(c.prev),twd:num(c.prev)*num(c.prevRate)},...c.atm.map(a=>({jpy:num(a.jpy),twd:num(a.twd)}))];
+  const sj=rows.reduce((s,r)=>s+r.jpy,0),st=rows.reduce((s,r)=>s+r.twd,0);
+  const avg=sj?st/sj:0;
+  return {sumJpy:sj,avg,spentTwd:num(c.spent)*avg,balance:sj-num(c.spent)};
+}
+function tripTotal(t){
+  const flights=t.flights.reduce((s,f)=>s+num(f.total),0);
+  const hotels=t.hotels.reduce((s,h)=>s+num(h.total),0);
+  const misc=t.misc.reduce((s,m)=>s+(num(m.total)||num(m.unit)*t.people),0);
+  const card=t.card.reduce((s,c)=>s+num(c.twd)+num(c.fee),0);
+  const cash=cashCalc(t).spentTwd;
+  return {flights,hotels,misc,card,cash,total:flights+hotels+misc+card+cash};
+}
+
+/* ============ ② 費用 ============ */
+function renderExpense(body,t){
+  const tot=tripTotal(t);
+  const top=el('div','card');
+  top.innerHTML=`<div class="stat">
+      <div><div class="b">NT$ ${fmt(tot.total)}</div><div class="l">支出總計</div></div>
+      <div><div class="b" style="font-size:18px;color:var(--ink)">NT$ ${fmt(tot.total/t.people)}</div><div class="l">平均每人</div></div>
+      <canvas id="pie" width="200" height="200"></canvas>
+      <div class="legend" id="pieLegend"></div>
+    </div>`;
+  body.appendChild(top);
+  drawPie(top.querySelector('#pie'),top.querySelector('#pieLegend'),[
+    ['機票',tot.flights,'#2f6fed'],['住宿',tot.hotels,'#0ea5a4'],['網路/保險/票券',tot.misc,'#845ef7'],
+    ['現金花費',tot.cash,'#f0b429'],['刷卡',tot.card,'#e8590c']]);
+
+  const c=el('div','card');
+  c.appendChild(sect('機票',makeTable([
+    {k:'leg',label:'說明',w:'80px',ph:'去程'},{k:'date',label:'日期',t:'date',w:'130px'},
+    {k:'from',label:'起始站'},{k:'dep',label:'啟程',t:'time',w:'80px'},
+    {k:'to',label:'目標站'},{k:'arr',label:'抵達',t:'time',w:'80px'},
+    {k:'baggage',label:'托運',w:'80px',ph:'Y(20Kg)'},{k:'total',label:'總計NT$',t:'num',w:'90px'},
+    {label:'平均/人',calc:r=>fmt(num(r.total)/t.people)}
+  ],t.flights,()=>({leg:t.flights.length?'回程':'去程'})),`小計 NT$ ${fmt(tot.flights)}`));
+  c.appendChild(sect('飯店',makeTable([
+    {k:'name',label:'名稱'},{k:'ds',label:'日期起',t:'date',w:'130px'},{k:'de',label:'日期迄',t:'date',w:'130px'},
+    {k:'total',label:'總計NT$',t:'num',w:'90px'},
+    {label:'單日價',calc:r=>{const n=dayCount(r.ds,r.de)-1;return n>0?fmt(num(r.total)/n):'-'}},
+    {k:'checkin',label:'Check In',w:'80px'},{k:'checkout',label:'Check Out',w:'80px'},{k:'note',label:'備註'}
+  ],t.hotels,()=>({ds:t.dateStart,de:t.dateEnd})),`小計 NT$ ${fmt(tot.hotels)}`));
+  c.appendChild(sect('網路 / 保險 / 票券 / 其他',makeTable([
+    {k:'cat',label:'類別',t:'sel',opts:['網路','保險','票券','其他'],w:'80px'},
+    {k:'desc',label:'說明'},{k:'vendor',label:'供應商/備註'},
+    {k:'unit',label:'單價/人',t:'num',w:'85px'},
+    {k:'total',label:'總計NT$',t:'num',w:'90px',ph:'空=單價×人數'},
+    {label:'計',calc:r=>fmt(num(r.total)||num(r.unit)*t.people)},
+    {k:'link',label:'連結'}
+  ],t.misc,()=>({cat:'其他'})),`小計 NT$ ${fmt(tot.misc)}`));
+  body.appendChild(c);
+
+  const cc=cashCalc(t);
+  const c2=el('div','card');
+  const cashHead=el('div');
+  const cu=curN(t);
+  cashHead.innerHTML=`<div class="toolrow">
+    <label class="muted">前次餘額(${esc(cu)})<input type="number" style="width:90px" value="${t.cash.prev}" onchange="trip().cash.prev=num(this.value);save();rerender()"></label>
+    <label class="muted">其匯率<input type="number" step="any" style="width:75px" value="${t.cash.prevRate}" onchange="trip().cash.prevRate=num(this.value);save();rerender()"></label></div>`;
+  const c2s=sect('現金（換匯）',cashHead);
+  c2s.appendChild(makeTable([
+    {k:'label',label:'說明',ph:'ATM換匯'},{k:'jpy',label:esc(cu),t:'num',w:'110px'},{k:'twd',label:'台幣 NT$',t:'num',w:'110px'},
+    {label:'匯率',calc:r=>num(r.jpy)?fmt1(num(r.twd)/num(r.jpy)):'-'}
+  ],t.cash.atm,()=>({label:'ATM換匯'})));
+  const cashFoot=el('div','toolrow');
+  cashFoot.style.marginTop='10px';
+  cashFoot.innerHTML=`<label class="muted">現金花費(${esc(cu)})<input type="number" style="width:100px" value="${t.cash.spent}" onchange="trip().cash.spent=num(this.value);save();rerender()"></label>
+    <span class="muted">持有 ${fmt(cc.sumJpy)} ${esc(cu)} ｜ 平均匯率 <b>${fmt1(cc.avg)}</b> ｜ 花費 ≈ <b style="color:var(--acc)">NT$ ${fmt(cc.spentTwd)}</b> ｜ 餘額 ${fmt(cc.balance)} ${esc(cu)}</span>`;
+  c2s.appendChild(cashFoot);
+  c2.appendChild(c2s);
+  c2.appendChild(sect('刷卡',makeTable([
+    {k:'desc',label:'說明'},{k:'jpy',label:esc(cu),t:'num',w:'100px'},
+    {k:'twd',label:'台幣 NT$',t:'num',w:'100px'},{k:'fee',label:'手續費',t:'num',w:'80px'},
+    {label:'實質匯率',calc:r=>num(r.jpy)?fmt1((num(r.twd)+num(r.fee))/num(r.jpy)):'-'}
+  ],t.card,()=>({})),`小計 NT$ ${fmt(tot.card)}（含手續費）`));
+  body.appendChild(c2);
+}
+function drawPie(cv,lg,data){
+  const ctx=cv.getContext('2d');const total=data.reduce((s,d)=>s+d[1],0);
+  const cx=100,cy=100,r=88;let a=-Math.PI/2;
+  if(!total){ctx.fillStyle='#e9edf5';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();}
+  data.forEach(([n,v,col])=>{
+    if(v<=0)return;const a2=a+v/total*2*Math.PI;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a2);ctx.closePath();
+    ctx.fillStyle=col;ctx.fill();a=a2;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,46,0,7);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card').trim()||'#fff';ctx.fill();
+  lg.innerHTML=data.map(([n,v,col])=>`<span><i style="background:${col}"></i>${n}：NT$ ${fmt(v)}（${total?Math.round(v/total*100):0}%）</span>`).join('');
+}
+
+/* ============ ③ 每日行程 ============ */
+const MODES=['地鐵','JR','新幹線','巴士','計程車','飛機','船','步行','其他'];
+const MODE_IC={地鐵:'🚇',JR:'🚃',新幹線:'🚄',巴士:'🚌',計程車:'🚕',飛機:'✈️',船:'⛴',步行:'🚶',其他:'🚏'};
+// 拖曳插入位置計算（以整張卡片為放置區）
+function rowsOf(card){return[...card.querySelectorAll('.item[data-idx]')]}
+function insertIndex(card,y){
+  for(const r of rowsOf(card)){const rc=r.getBoundingClientRect();if(y<rc.top+rc.height/2)return +r.dataset.idx}
+  return rowsOf(card).length;
+}
+function markInsert(card,y){
+  const rows=rowsOf(card);rows.forEach(r=>{r.style.borderTop='';r.style.borderBottom=''});
+  const idx=insertIndex(card,y);
+  if(idx<rows.length)rows[idx].style.borderTop='2px solid var(--acc)';
+  else if(rows.length)rows[rows.length-1].style.borderBottom='2px solid var(--acc)';
+}
+function clearInsert(card){rowsOf(card).forEach(r=>{r.style.borderTop='';r.style.borderBottom=''})}
+function renderDays(body,t){
+  const bar=el('div','daytabs');
+  t.days.forEach((d,i)=>{
+    const b=el('button',i===curDay?'on':'',`${mmdd(d.date)}(${wk(d.date)}) ${esc(d.title||'')}`);
+    b.onclick=()=>{curDay=i;rerender()};
+    b.ondragover=e=>{if(dragIdx!=null&&i!==curDay){e.preventDefault();b.style.outline='2px solid var(--acc)'}};
+    b.ondragleave=()=>b.style.outline='';
+    b.ondrop=e=>{e.preventDefault();b.style.outline='';
+      if(dragIdx==null||i===curDay)return;
+      const[m]=t.days[curDay].items.splice(dragIdx,1);t.days[i].items.push(m);dragIdx=null;save();rerender()};
+    b.dataset.day=i;
+    bar.appendChild(b);
+  });
+  const add=el('button',null,'＋ 新增日');
+  add.onclick=()=>{
+    const last=t.days[t.days.length-1];
+    let nd=t.dateStart;
+    if(last&&last.date){const x=new Date(last.date);x.setDate(x.getDate()+1);nd=x.toISOString().slice(0,10)}
+    t.days.push({date:nd,title:'',items:[]});curDay=t.days.length-1;save();rerender();
+  };
+  bar.appendChild(add);
+  body.appendChild(bar);
+  if(!t.days.length){body.appendChild(el('div','card muted','尚無行程日，點「＋ 新增日」開始。'));return}
+  if(curDay>=t.days.length)curDay=0;
+  const d=t.days[curDay];
+  const card=el('div','card');
+  const hd=el('div','toolrow');
+  hd.innerHTML=`<input type="date" style="width:140px" value="${d.date||''}" onchange="trip().days[curDay].date=this.value;save();rerender()">
+    <input style="width:200px;font-weight:700" placeholder="標題（如：往福岡）" value="${esc(d.title||'')}" onchange="trip().days[curDay].title=this.value;save()">
+    <span style="flex:1"></span>
+    <span class="muted">單日預算（${t.people}人）</span><b style="color:var(--acc);font-size:18px">NT$ ${fmt(dayBudget(t,d))}</b>
+    <button class="btn sm danger" onclick="delDay()">刪除此日</button>`;
+  card.appendChild(hd);
+  d.items.forEach((it,i)=>card.appendChild(itemRow(t,d,it,i)));
+  // 整張卡片都可放置，不必瞄準特定列
+  card.ondragover=e=>{if(dragIdx==null)return;e.preventDefault();
+    e.dataTransfer.dropEffect='move';markInsert(card,e.clientY)};
+  card.ondragleave=e=>{if(!card.contains(e.relatedTarget))clearInsert(card)};
+  card.ondrop=e=>{if(dragIdx==null)return;e.preventDefault();
+    let to=insertIndex(card,e.clientY);clearInsert(card);
+    const[m]=d.items.splice(dragIdx,1);if(dragIdx<to)to--;
+    d.items.splice(to,0,m);dragIdx=null;save();rerender()};
+  const ops=el('div','toolrow');ops.style.marginTop='10px';
+  [['activity','＋ 活動'],['transit','＋ 交通'],['note','＋ 備註']].forEach(([tp,label])=>{
+    const b=el('button','btn ghost sm',label);
+    b.onclick=()=>{d.items.push(tp==='transit'?{type:tp,mode:'地鐵',route:'',dur:'',budget:0}
+      :tp==='note'?{type:tp,name:''}
+      :{type:tp,t1:'',t2:'',name:'',note:'',budget:0,link:''});save();rerender()};
+    ops.appendChild(b);
+  });
+  card.appendChild(ops);
+  body.appendChild(card);
+  const foot=el('div','card muted');
+  foot.innerHTML=`旅程總預算（全部行程日）：<b style="color:var(--acc);font-size:16px">NT$ ${fmt(t.days.reduce((s,x)=>s+dayBudget(t,x),0))}</b>　<span>預算欄填「每人」金額，自動 ×${t.people}人</span>`;
+  body.appendChild(foot);
+}
+function delDay(){
+  const t=trip();if(!confirm('刪除這一天的所有行程？'))return;
+  t.days.splice(curDay,1);curDay=Math.max(0,curDay-1);save();rerender();
+}
+// 觸控拖移輔助
+let touchEl=null;
+function touchTarget(x,y){
+  const p=document.elementFromPoint(x,y);
+  return p&&p.closest('.item[data-idx],.daytabs button[data-day]');
+}
+function touchMark(x,y){
+  clearTouchMark();
+  const tg=touchTarget(x,y);if(!tg)return;
+  if(tg.dataset.day!=null)tg.style.outline='2px solid var(--acc)';
+  else{const rc=tg.getBoundingClientRect(),after=y>rc.top+rc.height/2;
+    tg.style.borderTop=after?'':'2px solid var(--acc)';tg.style.borderBottom=after?'2px solid var(--acc)':''}
+  touchEl=tg;
+}
+function clearTouchMark(){if(touchEl){touchEl.style.outline='';touchEl.style.borderTop='';touchEl.style.borderBottom='';touchEl=null}}
+function touchDrop(x,y,d,t){
+  const tg=touchTarget(x,y);clearTouchMark();
+  if(tg&&dragIdx!=null){
+    if(tg.dataset.day!=null){const k=+tg.dataset.day;
+      if(k!==curDay){const[m]=d.items.splice(dragIdx,1);t.days[k].items.push(m)}}
+    else{const j=+tg.dataset.idx;
+      if(j!==dragIdx){const rc=tg.getBoundingClientRect(),after=y>rc.top+rc.height/2;
+        let to=j+(after?1:0);const[m]=d.items.splice(dragIdx,1);if(dragIdx<to)to--;d.items.splice(to,0,m)}}
+  }
+  dragIdx=null;save();rerender();
+}
+function itemRow(t,d,it,i){
+  const row=el('div','item '+(it.type||'activity'));
+  row.dataset.idx=i;
+  const bind=(inp,k,isNum)=>{inp.onchange=()=>{it[k]=isNum?num(inp.value):inp.value;save();rerender()}};
+  // 拖移把手（拖到其他列排序，拖到日期頁籤可移到那一天）
+  const handle=el('div','drag','<svg width="10" height="16" viewBox="0 0 10 16" style="pointer-events:none" aria-hidden="true"><g fill="currentColor"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></g></svg>');
+  handle.title='拖移排序／拖到日期頁籤移至該日';
+  handle.onselectstart=()=>false;
+  // 由把手按下後啟用「整列」拖曳（避免把手命中範圍問題）
+  handle.onmousedown=()=>{row.draggable=true;
+    document.addEventListener('mouseup',()=>{row.draggable=false},{once:true})};
+  row.ondragstart=e=>{dragIdx=i;e.dataTransfer.setData('text/plain','');
+    e.dataTransfer.effectAllowed='move';setTimeout(()=>row.classList.add('dragging'),0)};
+  row.ondragend=()=>{row.draggable=false;dragIdx=null;rerender()};
+  handle.onpointerdown=e=>{if(e.pointerType!=='touch')return;e.preventDefault();
+    dragIdx=i;row.classList.add('dragging');try{handle.setPointerCapture(e.pointerId)}catch(_){}};
+  handle.onpointermove=e=>{if(e.pointerType!=='touch'||dragIdx==null)return;touchMark(e.clientX,e.clientY)};
+  handle.onpointerup=e=>{if(e.pointerType!=='touch'||dragIdx==null)return;touchDrop(e.clientX,e.clientY,d,t)};
+  handle.onpointercancel=()=>{if(dragIdx!=null){clearTouchMark();dragIdx=null;rerender()}};
+  row.appendChild(handle);
+  // 時間
+  const tm=el('div','tm');
+  if(it.type!=='note'){
+    const t1=el('input');t1.type='time';t1.value=it.t1||'';bind(t1,'t1');
+    const t2=el('input');t2.type='time';t2.value=it.t2||'';bind(t2,'t2');
+    tm.append(t1,t2);
+  }
+  row.appendChild(tm);
+  row.appendChild(el('div','ic',it.type==='transit'?(MODE_IC[it.mode]||'🚏'):it.type==='note'?'📌':'📍'));
+  const bd=el('div','bd');
+  if(it.type==='transit'){
+    const l1=el('div','sub');
+    const ms=el('select');ms.style.width='90px';MODES.forEach(m=>{const o=el('option',null,m);o.value=m;ms.appendChild(o)});ms.value=it.mode||'地鐵';bind(ms,'mode');
+    const rt=el('input');rt.placeholder='路線（如 [機場線]福岡機場 >> 博多）';rt.value=it.route||'';bind(rt,'route');rt.style.flex='2';rt.style.minWidth='200px';
+    const du=el('input');du.placeholder='需時';du.value=it.dur||'';du.style.width='90px';bind(du,'dur');
+    const fa=el('input');fa.type='number';fa.placeholder='票價/人';fa.value=it.budget||'';fa.style.width='90px';bind(fa,'budget',1);
+    l1.append(ms,rt,du,fa);bd.appendChild(l1);
+  }else if(it.type==='note'){
+    const n=el('input');n.placeholder='備註（如 *刷卡、隔日早餐先備）';n.value=it.name||'';bind(n,'name');
+    bd.appendChild(n);
+  }else{
+    const n=el('input');n.placeholder='計畫項目';n.value=it.name||'';n.style.fontWeight='600';bind(n,'name');
+    bd.appendChild(n);
+    const l2=el('div','sub');
+    const no=el('input');no.placeholder='備註';no.value=it.note||'';no.style.flex='2';bind(no,'note');
+    const bu=el('input');bu.type='number';bu.placeholder='預算/人';bu.value=it.budget||'';bu.style.width='90px';bind(bu,'budget',1);
+    const lk=el('input');lk.placeholder='連結';lk.value=it.link||'';lk.style.flex='1';bind(lk,'link');
+    l2.append(no,bu,lk);bd.appendChild(l2);
+    if(it.link)bd.appendChild(el('div','muted',`<a href="${esc(it.link)}" target="_blank">🔗 ${esc(it.link.slice(0,60))}</a>`));
+  }
+  row.appendChild(bd);
+  // 金額+操作
+  if(it.type!=='note'&&num(it.budget))row.appendChild(el('div','calc',`<span class="muted" style="font-size:11px">×${t.people}</span> ${fmt(num(it.budget)*t.people)}`));
+  const ops=el('div','ops');
+  const del=el('button','rowdel','✕');del.onclick=()=>{d.items.splice(i,1);save();rerender()};
+  ops.append(del);
+  row.appendChild(ops);
+  return row;
+}
+
+/* ============ ① 總覽 ============ */
+function renderOverview(body,t){
+  const tot=tripTotal(t);
+  const top=el('div','card');
+  top.innerHTML=`<div class="stat">
+    <div><div class="b">${dayCount(t.dateStart,t.dateEnd)||'-'}</div><div class="l">天數</div></div>
+    <div><div class="b">${t.days.length}</div><div class="l">行程日</div></div>
+    <div><div class="b">NT$ ${fmt(tot.total)}</div><div class="l">支出總計</div></div>
+    <div><div class="b">NT$ ${fmt(t.days.reduce((s,d)=>s+dayBudget(t,d),0))}</div><div class="l">行程預算（${t.people}人）</div></div>
+    <div><div class="b">${packPct(t)}%</div><div class="l">打包進度</div></div>
+  </div>`;
+  body.appendChild(top);
+
+  // 每日摘要
+  const sumC=el('div','card');
+  const rows=t.days.map((d,i)=>{
+    const acts=d.items.filter(x=>x.type!=='note'&&x.type!=='transit'&&x.name);
+    const meals=acts.filter(x=>/早餐|午餐|晚餐|宵夜|下午茶/.test(x.name)).map(x=>esc(x.name)).join('、');
+    const spots=acts.filter(x=>!/早餐|午餐|晚餐|宵夜|下午茶|Check|寄放|出門|起床/i.test(x.name)).slice(0,4).map(x=>esc(x.name)).join('、');
+    const trans=d.items.filter(x=>x.type==='transit').map(x=>MODE_IC[x.mode]||'').join('');
+    return `<tr style="cursor:pointer" onclick="curTab='days';curDay=${i};render()">
+      <td><b>${mmdd(d.date)}(${wk(d.date)})</b></td><td>${esc(d.title||'')}</td>
+      <td class="muted">${spots}</td><td class="muted">${meals}</td><td>${trans}</td>
+      <td class="calc">NT$ ${fmt(dayBudget(t,d))}</td></tr>`;
+  }).join('');
+  sumC.appendChild(sect('每日摘要',el('div','tblwrap',
+    `<table class="et"><tr><th>日期</th><th>標題</th><th>重點</th><th>餐食</th><th>交通</th><th>預算(${t.people}人)</th></tr>${rows||'<tr><td colspan=6 class=muted>尚無行程日</td></tr>'}</table>`)));
+  body.appendChild(sumC);
+
+  // 時間格
+  if(t.days.length){
+    const gridC=el('div','card');
+    const hours=[];for(let h=5;h<=23;h++)hours.push(h);
+    const g=el('div','ovgrid');
+    g.style.gridTemplateColumns=`48px repeat(${t.days.length},minmax(110px,1fr))`;
+    g.appendChild(el('div','hh','🚩'));
+    t.days.forEach(d=>g.appendChild(el('div','dh',`${mmdd(d.date)}(${wk(d.date)})<br><span style="font-weight:400;font-size:11px">${esc(d.title||'')}</span>`)));
+    hours.forEach(h=>{
+      g.appendChild(el('div','hh',String(h).padStart(2,'0')));
+      t.days.forEach(d=>{
+        const cell=el('div','cell');
+        d.items.forEach((it,ii)=>{
+          let hh=null;
+          if(it.t1)hh=parseInt(it.t1.slice(0,2));
+          if(it.type==='transit'&&!it.t1){ // 交通無時間時掛在前一個有時間的項目之後
+            const prev=d.items.slice(0,ii).reverse().find(x=>x.t1);
+            if(prev)hh=parseInt(prev.t1.slice(0,2));
+          }
+          if(hh===h){
+            if(it.type==='transit')cell.appendChild(el('span','pill t',`${MODE_IC[it.mode]||''}${esc((it.route||it.mode||'').slice(0,14))}`));
+            else if(it.type!=='note'&&it.name)cell.appendChild(el('span','pill',`<b>${esc(it.t1||'')}</b> ${esc(it.name.slice(0,16))}`));
+            cell.appendChild(el('br'));
+          }
+        });
+        g.appendChild(cell);
+      });
+    });
+    gridC.appendChild(sect('時間表',g,'依活動開始時間排列'));
+    body.appendChild(gridC);
+  }
+}
+
+/* ============ ④ 攜帶物品 ============ */
+function renderPacking(body,t){
+  const done=t.packing.filter(p=>p.done).length;
+  const top=el('div','card');
+  const bar=el('div','toolrow');
+  bar.innerHTML=`<b>打包進度 ${done}/${t.packing.length}</b>`;
+  const pg=el('div','prog');pg.appendChild(el('i')).style.width=packPct(t)+'%';
+  bar.appendChild(pg);
+  const others=DB.trips.filter(x=>x.id!==t.id&&x.packing.length);
+  if(others.length){
+    const sel=el('select');sel.style.width='170px';
+    sel.innerHTML='<option value="">複製其他旅行清單…</option>'+others.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('');
+    sel.onchange=()=>{
+      const src=DB.trips.find(x=>x.id===sel.value);if(!src)return;
+      if(confirm(`以「${src.name}」的清單覆蓋目前清單？`)){
+        t.packing=src.packing.map(p=>({cat:p.cat,name:p.name,done:false,owner:p.owner||''}));save();rerender();
+      }else sel.value='';
+    };
+    bar.appendChild(sel);
+  }
+  const reset=el('button','btn sec sm','全部取消勾選');
+  reset.onclick=()=>{t.packing.forEach(p=>p.done=false);save();rerender()};
+  bar.appendChild(reset);
+  top.appendChild(bar);
+  body.appendChild(top);
+
+  const c=el('div','card');
+  const cats=[...new Set(t.packing.map(p=>p.cat||'未分類'))];
+  cats.forEach(cat=>{
+    const box=el('div','pkcat');
+    box.appendChild(el('h4',null,esc(cat)));
+    t.packing.forEach((p,i)=>{
+      if((p.cat||'未分類')!==cat)return;
+      const r=el('div','pkrow');
+      const ck=el('input');ck.type='checkbox';ck.checked=!!p.done;ck.style.width='16px';
+      ck.onchange=()=>{p.done=ck.checked;save();rerender()};
+      const nm=el('input');nm.value=p.name;nm.className=p.done?'done':'';nm.onchange=()=>{p.name=nm.value;save()};
+      const ow=el('input');ow.value=p.owner||'';ow.placeholder='備註';ow.style.width='110px';ow.className='muted';ow.onchange=()=>{p.owner=ow.value;save()};
+      const del=el('button','rowdel','✕');del.onclick=()=>{t.packing.splice(i,1);save();rerender()};
+      r.append(ck,nm,ow,del);box.appendChild(r);
+    });
+    const add=el('button','btn ghost sm','＋');
+    add.onclick=()=>{t.packing.push({cat,name:'',done:false,owner:''});save();rerender()};
+    box.appendChild(add);
+    c.appendChild(box);
+  });
+  const addCat=el('button','btn sec sm','＋ 新增分類');
+  addCat.onclick=()=>{const n=prompt('分類名稱？');if(n){t.packing.push({cat:n.trim(),name:'',done:false,owner:''});save();rerender()}};
+  c.appendChild(addCat);
+  body.appendChild(c);
+
+  const g=el('div','card');
+  g.appendChild(sect('送禮對象',makeTable([
+    {k:'done',label:'已買',t:'check',w:'46px'},{k:'name',label:'對象',w:'140px'},{k:'what',label:'買了什麼'}
+  ],t.gifts,()=>({done:false})),
+  `${t.gifts.filter(x=>x.done).length}/${t.gifts.length} 完成`));
+  body.appendChild(g);
+}
+
+/* ============ ⑤ 店家 ============ */
+function renderShops(body,t){
+  const bar=el('div','toolrow');
+  const add=el('button','btn','＋ 新增店家');
+  add.onclick=()=>{t.shops.push({cat:'',name:'新店家',info:'',rating:'',link:'',booked:false,visited:false,open:true,menu:[]});save();rerender()};
+  bar.appendChild(add);
+  bar.appendChild(el('span','muted',`共 ${t.shops.length} 家｜菜單台幣以匯率 ${t.rate} 自動換算`));
+  body.appendChild(bar);
+  const cats=[...new Set(t.shops.map(s=>s.cat||'未分類'))];
+  cats.forEach(cat=>{
+    const card=el('div','card');
+    card.appendChild(el('h3',null,`<span style="color:var(--acc)">${esc(cat)}</span>`));
+    t.shops.forEach((s,si)=>{
+      if((s.cat||'未分類')!==cat)return;
+      const sc=el('div','shopcard');
+      const hd=el('div','hd');
+      const bind=(inp,k)=>{inp.onchange=()=>{s[k]=inp.type==='checkbox'?inp.checked:inp.value;save();rerender()}};
+      const ct=el('input');ct.value=s.cat||'';ct.placeholder='分類';ct.style.width='90px';bind(ct,'cat');
+      const nm=el('input','nm');nm.value=s.name||'';bind(nm,'name');
+      const rt=el('input');rt.value=s.rating||'';rt.placeholder='評分';rt.style.width='55px';bind(rt,'rating');
+      const bk=el('label','muted');const bki=el('input');bki.type='checkbox';bki.checked=!!s.booked;bind(bki,'booked');bk.append(bki,'已訂位');
+      const vs=el('label','muted');const vsi=el('input');vsi.type='checkbox';vsi.checked=!!s.visited;bind(vsi,'visited');vs.append(vsi,'已去過');
+      const tg=el('button','btn sec sm',s.open?'收合菜單':`菜單(${s.menu.length})`);
+      tg.onclick=()=>{s.open=!s.open;save();rerender()};
+      const del=el('button','rowdel','✕');del.onclick=()=>{if(confirm('刪除店家？')){t.shops.splice(si,1);save();rerender()}};
+      hd.append(ct,nm,rt,bk,vs,tg,del);sc.appendChild(hd);
+      const l2=el('div','toolrow');l2.style.margin='4px 0 0';
+      const info=el('input');info.value=s.info||'';info.placeholder='分店 / 營業時間 / 備註';info.style.flex='2';bind(info,'info');
+      const lk=el('input');lk.value=s.link||'';lk.placeholder='連結';lk.style.flex='1';bind(lk,'link');
+      l2.append(info,lk);
+      if(s.link){const a=el('a',null,'🔗');a.href=s.link;a.target='_blank';l2.appendChild(a)}
+      sc.appendChild(l2);
+      if(s.open){
+        sc.appendChild(makeTable([
+          {k:'item',label:'品項'},{k:'jpy',label:esc(curN(t)),t:'num',w:'90px'},
+          {label:'台幣',calc:r=>num(r.jpy)?fmt(jpy2twd(r.jpy,t)):''},
+          {k:'desc',label:'內容'}
+        ],s.menu,()=>({})));
+      }
+      card.appendChild(sc);
+    });
+    body.appendChild(card);
+  });
+  if(!t.shops.length)body.appendChild(el('div','card muted','尚無店家。'));
+}
+
+/* ============ ⑥ 購物清單 ============ */
+function renderShopping(body,t){
+  const bought=t.shopping.filter(x=>x.done);
+  const sumJ=bought.reduce((s,x)=>s+num(x.jpy),0);
+  const top=el('div','card');
+  top.innerHTML=`<div class="stat">
+    <div><div class="b" style="font-size:20px">${bought.length}/${t.shopping.length}</div><div class="l">已購項目</div></div>
+    <div><div class="b" style="font-size:20px">${fmt(sumJ)}</div><div class="l">已購${esc(curN(t))}</div></div>
+    <div><div class="b" style="font-size:20px">NT$ ${fmt(jpy2twd(sumJ,t))}</div><div class="l">已購台幣(估)</div></div></div>`;
+  const tools=el('div','toolrow');tools.style.marginTop='8px';
+  const b1=el('button','btn sec sm','已購金額 → 新增一筆刷卡');
+  b1.onclick=()=>{if(!sumJ)return alert('沒有已購項目');
+    t.card.push({desc:'購物清單彙總',jpy:sumJ,twd:Math.round(jpy2twd(sumJ,t)),fee:0});save();alert('已加入費用→刷卡');};
+  const b2=el('button','btn sec sm','已購金額 → 加到現金花費');
+  b2.onclick=()=>{if(!sumJ)return alert('沒有已購項目');
+    t.cash.spent=num(t.cash.spent)+sumJ;save();alert('已加到費用→現金花費');};
+  tools.append(b1,b2);top.appendChild(tools);
+  body.appendChild(top);
+  const c=el('div','card');
+  c.appendChild(makeTable([
+    {k:'done',label:'已購',t:'check',w:'46px'},
+    {k:'cat',label:'分類',w:'85px',ph:'藥妝'},
+    {k:'name',label:'品名'},{k:'desc',label:'說明/規格'},
+    {k:'jpy',label:esc(curN(t)),t:'num',w:'90px'},
+    {label:'台幣',calc:r=>num(r.jpy)?fmt(jpy2twd(r.jpy,t)):''}
+  ],t.shopping,()=>({cat:'藥妝',done:false})));
+  body.appendChild(c);
+}
+
+/* ============ ⑦ 參考資料 ============ */
+function renderRefs(body,t){
+  const c=el('div','card');
+  t.refs.forEach((r,i)=>{
+    const box=el('div','shopcard');
+    const hd=el('div','hd');
+    const ti=el('input','nm');ti.value=r.title||'';ti.placeholder='標題';
+    ti.onchange=()=>{r.title=ti.value;save()};
+    const sel=el('select');sel.style.width='75px';
+    ['連結','文字'].forEach(o=>{const op=el('option',null,o);op.value=o;sel.appendChild(op)});
+    sel.value=r.type||'連結';sel.onchange=()=>{r.type=sel.value;save();rerender()};
+    const del=el('button','rowdel','✕');del.onclick=()=>{t.refs.splice(i,1);save();rerender()};
+    hd.append(ti,sel,del);box.appendChild(hd);
+    if((r.type||'連結')==='連結'){
+      const u=el('input');u.value=r.content||'';u.placeholder='https://…';
+      u.onchange=()=>{r.content=u.value;save();rerender()};
+      box.appendChild(u);
+      if(r.content)box.appendChild(el('div',null,`<a href="${esc(r.content)}" target="_blank">🔗 開啟連結</a>`));
+    }else{
+      const ta=el('textarea');ta.value=r.content||'';ta.rows=Math.min(14,Math.max(3,(r.content||'').split('\n').length));
+      ta.style.border='1px solid var(--line)';ta.onchange=()=>{r.content=ta.value;save()};
+      box.appendChild(ta);
+    }
+    c.appendChild(box);
+  });
+  const add=el('button','btn ghost sm','＋ 新增參考資料');
+  add.onclick=()=>{t.refs.push({title:'',type:'連結',content:''});save();rerender()};
+  c.appendChild(add);
+  body.appendChild(c);
+}
+
+/* ============ JSON 匯出/還原 ============ */
+function download(name,blob){
+  const a=el('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+function exportJson(){
+  download(`旅行規劃備份_${today()}.json`,new Blob([JSON.stringify(DB,null,1)],{type:'application/json'}));
+}
+$('#fileJson').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      if(!d.trips)throw 0;
+      if(confirm(`備份含 ${d.trips.length} 個旅行。「確定」=取代全部，「取消」=附加到現有清單`)){DB=d}
+      else{d.trips.forEach(x=>{x.id=uid();DB.trips.push(x)})}
+      save();goHome();
+    }catch(_){alert('JSON 格式錯誤')}
+  };
+  rd.readAsText(f);e.target.value='';
+};
+
+/* ============ Excel 匯出 ============ */
+function exportTripXlsx(){
+  const t=trip(),tot=tripTotal(t),cc=cashCalc(t),cu=curN(t);
+  const wb=XLSX.utils.book_new();
+  const add=(name,aoa)=>{
+    let nm=name.replace(/[\[\]:*?/\\]/g,'').slice(0,28)||'表';
+    let i=1,base=nm;while(wb.SheetNames.includes(nm))nm=base+(++i);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),nm);
+  };
+  const fx=[[t.name,'','','','','','','支出總計',tot.total],[],
+    ['機票','日期','起始站','啟程','目標站','抵達','托運','總計NT$','平均/人']];
+  t.flights.forEach(f=>fx.push([f.leg,f.date,f.from,f.dep,f.to,f.arr,f.baggage,num(f.total),num(f.total)/t.people]));
+  fx.push([],['飯店','日期起','日期迄','總計NT$','Check In','Check Out','備註']);
+  t.hotels.forEach(h=>fx.push([h.name,h.ds,h.de,num(h.total),h.checkin,h.checkout,h.note]));
+  fx.push([],['類別','說明','供應商','單價/人','總計NT$','連結']);
+  t.misc.forEach(m=>fx.push([m.cat,m.desc,m.vendor,num(m.unit),num(m.total)||num(m.unit)*t.people,m.link]));
+  fx.push([],['現金',cu,'台幣','匯率'],['前次餘額',num(t.cash.prev),num(t.cash.prev)*num(t.cash.prevRate),t.cash.prevRate]);
+  t.cash.atm.forEach(a=>fx.push([a.label||'ATM換匯',num(a.jpy),num(a.twd),num(a.jpy)?num(a.twd)/num(a.jpy):'']));
+  fx.push(['花費',num(t.cash.spent),Math.round(cc.spentTwd),cc.avg],['餘額',cc.balance]);
+  fx.push([],['刷卡',cu,'台幣','手續費','實質匯率']);
+  t.card.forEach(c=>fx.push([c.desc,num(c.jpy),num(c.twd),num(c.fee),num(c.jpy)?(num(c.twd)+num(c.fee))/num(c.jpy):'']));
+  add('費用',fx);
+  t.days.forEach(d=>{
+    const aoa=[['日期',d.date,'行程計畫',d.title,'','單日總預算('+t.people+'人)',dayBudget(t,d)],
+      ['時間起','時間迄','類型','計畫項目/路線','備註/需時','預算/人','×'+t.people+'人','連結']];
+    d.items.forEach(it=>{
+      if(it.type==='transit')aoa.push([it.t1||'',it.t2||'','交通',(it.mode||'')+' '+(it.route||''),it.dur||'',num(it.budget),num(it.budget)*t.people,'']);
+      else if(it.type==='note')aoa.push(['','','備註',it.name||'','','','','']);
+      else aoa.push([it.t1||'',it.t2||'','活動',it.name||'',it.note||'',num(it.budget),num(it.budget)*t.people,it.link||'']);
+    });
+    add((d.date?d.date.slice(5).replace('-',''):'日')+'行程',aoa);
+  });
+  const pk=[['分類','項目','已備','備註']];
+  t.packing.forEach(p=>pk.push([p.cat,p.name,p.done?'V':'',p.owner]));
+  pk.push([],['送禮對象','已買','買了什麼']);
+  t.gifts.forEach(g=>pk.push([g.name,g.done?'V':'',g.what]));
+  add('攜帶物品',pk);
+  const sh=[['分類','店名','資訊','評分','已訂位','品項',cu,'台幣(估)','內容','連結']];
+  t.shops.forEach(s=>{
+    sh.push([s.cat,s.name,s.info,s.rating,s.booked?'V':'','','','','',s.link]);
+    s.menu.forEach(m=>sh.push(['','','','','',m.item,num(m.jpy),Math.round(jpy2twd(m.jpy,t)),m.desc,'']));
+  });
+  add('店家資訊',sh);
+  const sp=[['已購','分類','品名','說明',cu,'台幣(估)']];
+  t.shopping.forEach(x=>sp.push([x.done?'V':'',x.cat,x.name,x.desc,num(x.jpy),Math.round(jpy2twd(x.jpy,t))]));
+  add('購物清單',sp);
+  const rf=[['標題','類型','內容']];
+  t.refs.forEach(r=>rf.push([r.title,r.type,(r.content||'').slice(0,30000)]));
+  add('參考資料',rf);
+  XLSX.writeFile(wb,t.name+'.xlsx');
+}
+
+/* ============ Excel 匯入（解析現有格式） ============ */
+function xT(v){ // → 'HH:MM'
+  if(v==null)return'';
+  if(v instanceof Date)return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');
+  if(typeof v==='number'&&v>0&&v<1){const m=Math.round(v*1440);return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+  if(typeof v==='string'&&/^\d{1,2}:\d{2}/.test(v.trim())){const p=v.trim().split(':');return p[0].padStart(2,'0')+':'+p[1].slice(0,2)}
+  return'';
+}
+function xD(v){ // → 'YYYY-MM-DD'
+  if(v==null)return'';
+  if(v instanceof Date&&!isNaN(v))return new Date(v.getTime()-v.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  if(typeof v==='number'&&v>59&&v<80000)return new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5).toISOString().slice(0,10);
+  if(typeof v==='string'){const m=v.match(/(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`}
+  return'';
+}
+const xs=v=>v==null?'':String(v).trim();
+const jn=v=>{if(typeof v==='number')return v;const m=String(v??'').replace(/,/g,'').match(/\d+(\.\d+)?/);return m?parseFloat(m[0]):0};
+$('#fileXlsx').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{importWorkbook(XLSX.read(rd.result,{type:'array'}),f.name.replace(/\.(xlsx|xlsm)$/i,''))}
+    catch(err){alert('匯入失敗：'+err.message)}
+  };
+  rd.readAsArrayBuffer(f);e.target.value='';
+};
+function importWorkbook(wb,name){
+  const t=newTrip(name);
+  t.cur='日圓'; // 既有格式為日本旅行
+  const log=[];
+  wb.SheetNames.forEach(nm=>{
+    const ws=wb.Sheets[nm];
+    if(ws['!ref']){const rg=XLSX.utils.decode_range(ws['!ref']);rg.s.c=0;rg.s.r=0;ws['!ref']=XLSX.utils.encode_range(rg)}
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    const h0=aoa[0]||[],h1=aoa[1]||[];
+    try{
+      // ── 本站匯出格式（依表頭特徵辨識，可完整來回） ──
+      if(xs(h0[7])==='支出總計'){parseExpenseX(t,aoa);log.push('💰 '+nm+' → 費用（匯出格式）')}
+      else if(xs(h0[0])==='日期'&&xs(h1[2])==='類型'){parseDayX(t,nm,aoa);log.push('🗓 '+nm+' → 每日行程（匯出格式）')}
+      else if(xs(h0[0])==='分類'&&xs(h0[1])==='項目'){parsePackingX(t,aoa);log.push('🎒 '+nm+' → 攜帶物品（匯出格式）')}
+      else if(xs(h0[1])==='店名'&&xs(h0[5])==='品項'){parseShopsX(t,aoa);log.push('🍜 '+nm+' → 店家（匯出格式）')}
+      else if(xs(h0[0])==='已購'&&xs(h0[2])==='品名'){parseShoppingX(t,aoa);log.push('🛍 '+nm+' → 購物清單（匯出格式）')}
+      else if(xs(h0[0])==='標題'&&xs(h0[1])==='類型'&&xs(h0[2])==='內容'){parseRefsX(t,aoa);log.push('🔗 '+nm+' → 參考資料（匯出格式）')}
+      // ── 原始手作格式 ──
+      else if(/機\+酒|花費/.test(nm)){parseExpense(t,aoa);log.push('💰 '+nm+' → 費用')}
+      else if(/行程/.test(nm)){parseDaySheet(t,nm,aoa);log.push('🗓 '+nm+' → 每日行程')}
+      else if(/攜帶物品/.test(nm)){parsePacking(t,aoa);log.push('🎒 '+nm+' → 攜帶物品')}
+      else if(/店家/.test(nm)){parseShops(t,aoa);log.push('🍜 '+nm+' → 店家')}
+      else if(/藥妝|KANEBO|美妝/i.test(nm)){parseShopping(t,nm,aoa);log.push('🛍 '+nm+' → 購物清單')}
+      else if(/菜單/.test(nm)){parseMenuSheet(t,nm,aoa);log.push('🍜 '+nm+' → 店家（菜單）')}
+      else{dumpRef(t,nm,aoa);log.push('🔗 '+nm+' → 參考資料（原文保存）')}
+    }catch(err){dumpRef(t,nm,aoa);log.push('⚠ '+nm+' 解析失敗，改存參考資料')}
+  });
+  // 日期範圍與匯率
+  const ds=t.days.map(d=>d.date).filter(Boolean).sort();
+  if(ds.length){t.dateStart=ds[0];t.dateEnd=ds[ds.length-1]}
+  // 機票日期只有「M月D日」時，借用行程年份
+  t.flights.forEach(f=>{
+    if(!f.date){const m=(f.leg||'').match(/(\d{1,2})月(\d{1,2})日/);
+      if(m){f.date=`${t.dateStart.slice(0,4)}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+        f.leg=f.leg.replace(/\s*\d{1,2}月\d{1,2}日/,'')}}
+  });
+  const avg=cashCalc(t).avg;if(avg>0.05&&avg<1)t.rate=Math.round(avg*1e4)/1e4;
+  DB.trips.unshift(t);save();openTrip(t.id);
+  alert('匯入完成（盡力解析，請核對數字）：\n\n'+log.join('\n'));
+}
+/* ── 本站匯出格式解析（與 exportTripXlsx 一一對應） ── */
+function parseExpenseX(t,aoa){
+  let sec='';
+  aoa.forEach((row,ri)=>{
+    const r=row||[],a=xs(r[0]);
+    if(ri===0)return;
+    if(a==='機票'&&xs(r[1])==='日期'){sec='fl';return}
+    if(a==='飯店'&&xs(r[1])==='日期起'){sec='ho';return}
+    if(a==='類別'&&xs(r[1])==='說明'){sec='misc';return}
+    if(a==='現金'){sec='cash';if(xs(r[1]))t.cur=xs(r[1]);return}
+    if(a==='刷卡'&&xs(r[2])==='台幣'){sec='card';return}
+    if(!a)return;
+    if(sec==='fl')t.flights.push({leg:a,date:xD(r[1]),from:xs(r[2]),dep:xT(r[3]),to:xs(r[4]),arr:xT(r[5]),baggage:xs(r[6]),total:num(r[7])});
+    else if(sec==='ho')t.hotels.push({name:a,ds:xD(r[1]),de:xD(r[2]),total:num(r[3]),checkin:xs(r[4]),checkout:xs(r[5]),note:xs(r[6])});
+    else if(sec==='misc')t.misc.push({cat:a,desc:xs(r[1]),vendor:xs(r[2]),unit:num(r[3]),total:num(r[4]),link:xs(r[5])});
+    else if(sec==='cash'){
+      if(a==='前次餘額'){t.cash.prev=num(r[1]);t.cash.prevRate=num(r[3])||t.cash.prevRate}
+      else if(a==='花費'){t.cash.spent=num(r[1]);if(num(r[3])>0)t.rate=Math.round(num(r[3])*1e4)/1e4}
+      else if(a==='餘額'){}
+      else t.cash.atm.push({label:a,jpy:num(r[1]),twd:num(r[2])});
+    }
+    else if(sec==='card')t.card.push({desc:a,jpy:num(r[1]),twd:num(r[2]),fee:num(r[3])});
+  });
+}
+function parseDayX(t,nm,aoa){
+  const h=aoa[0]||[];
+  const d={date:xD(h[1]),title:xs(h[3]),items:[]};
+  for(let i=2;i<aoa.length;i++){
+    const r=aoa[i]||[],tp=xs(r[2]),name=xs(r[3]);
+    if(!tp&&!name)continue;
+    if(tp==='交通'){
+      const mode=MODES.find(m=>name.startsWith(m))||'其他';
+      d.items.push({type:'transit',t1:xT(r[0]),t2:xT(r[1]),mode,
+        route:name.startsWith(mode)?name.slice(mode.length).trim():name,dur:xs(r[4]),budget:num(r[5])});
+    }else if(tp==='備註')d.items.push({type:'note',name});
+    else if(name)d.items.push({type:'activity',t1:xT(r[0]),t2:xT(r[1]),name,note:xs(r[4]),budget:num(r[5]),link:xs(r[7])});
+  }
+  if(!d.title)d.title=nm.replace(/行程/,'');
+  t.days.push(d);
+}
+function parsePackingX(t,aoa){
+  t.packing=[];t.gifts=[];let mode='pack';
+  aoa.forEach((row,ri)=>{
+    if(ri===0)return;
+    const r=row||[],a=xs(r[0]);
+    if(a==='送禮對象'){mode='gift';return}
+    if(mode==='pack'&&xs(r[1]))t.packing.push({cat:a||'未分類',name:xs(r[1]),done:xs(r[2])==='V',owner:xs(r[3])});
+    else if(mode==='gift'&&a)t.gifts.push({name:a,done:xs(r[1])==='V',what:xs(r[2])});
+  });
+}
+function parseShopsX(t,aoa){
+  let shop=null;
+  aoa.forEach((row,ri)=>{
+    if(ri===0)return;
+    const r=row||[];
+    if(xs(r[1])){
+      shop={cat:xs(r[0]),name:xs(r[1]),info:xs(r[2]),rating:xs(r[3]),booked:xs(r[4])==='V',
+        visited:false,link:xs(r[9]),open:false,menu:[]};
+      t.shops.push(shop);
+    }else if(shop&&(xs(r[5])||num(r[6])))shop.menu.push({item:xs(r[5]),jpy:num(r[6]),desc:xs(r[8])});
+  });
+}
+function parseShoppingX(t,aoa){
+  aoa.forEach((row,ri)=>{
+    if(ri===0)return;
+    const r=row||[];
+    if(xs(r[2]))t.shopping.push({done:xs(r[0])==='V',cat:xs(r[1]),name:xs(r[2]),desc:xs(r[3]),jpy:num(r[4])});
+  });
+}
+function parseRefsX(t,aoa){
+  aoa.forEach((row,ri)=>{
+    if(ri===0)return;
+    const r=row||[];
+    if(xs(r[0])||xs(r[2]))t.refs.push({title:xs(r[0]),type:xs(r[1])||'文字',content:xs(r[2])});
+  });
+}
+
+function parseExpense(t,aoa){
+  let sec='';
+  aoa.forEach(row=>{
+    const r=row||[],a=xs(r[0]);
+    if(!a){return}
+    if(a==='機票'){sec='fl';return}
+    if(a==='飯店'){sec='ho';return}
+    if(a==='網路'){sec='misc網路';return}
+    if(a==='保險'){sec='misc保險';return}
+    if(a==='日幣'){sec='cash';return}
+    if(/刷卡/.test(a)){sec='card';return}
+    if(/票券/.test(a)){sec='tk';return}
+    if(a==='說明'||a==='機票'||/^支出/.test(a))return;
+    if(sec==='fl'&&/程/.test(a)){
+      t.flights.push({leg:a.replace(/\n/g,' '),date:xD(r[1])||'',from:xs(r[3]),dep:xT(r[4]),to:xs(r[5]),arr:xT(r[6]),
+        baggage:xs(r[7]),total:num(r[12])||0});
+      if(!xD(r[1])&&xs(r[1]))t.flights[t.flights.length-1].leg+=' '+xs(r[1]);
+    }else if(sec==='ho'){
+      t.hotels.push({name:a,ds:xD(r[3]),de:xD(r[4]),total:num(r[6]),checkin:xs(r[7]),checkout:xs(r[8]),note:xs(r[9])});
+    }else if(sec.startsWith('misc')&&num(r[10])){
+      t.misc.push({cat:sec.slice(4),desc:a,vendor:xs(r[3])||xs(r[6]),unit:num(r[10]),total:0,link:''});
+    }else if(sec==='cash'){
+      if(a==='前次餘額'){t.cash.prev=num(r[2]);t.cash.prevRate=num(r[5])||t.cash.prevRate}
+      else if(a==='花費')t.cash.spent=num(r[2])||t.cash.spent;
+      else if(a==='現值'||a==='餘額'||a==='換匯記錄'){/* 現值/餘額為彙總列，不重複計 */}
+      else if(num(r[2])>0&&(num(r[7])>0||num(r[5])>0)) // 換匯明細列（含日期列、ATM列）
+        t.cash.atm.push({label:xD(a)||a||'換匯',jpy:num(r[2]),twd:num(r[7])||Math.round(num(r[2])*num(r[5]))});
+    }else if(sec==='card'&&(num(r[4])||num(r[5]))){
+      t.card.push({desc:a,jpy:num(r[4])||num(r[5]),twd:num(r[12]),fee:num(r[13])});
+    }else if(sec==='tk'&&(num(r[12])||num(r[10]))){
+      t.misc.push({cat:'票券',desc:a,vendor:'',unit:0,total:num(r[12])||num(r[10]),link:xs(r[14])});
+    }
+  });
+}
+function parseDaySheet(t,nm,aoa){
+  const r1=aoa[1]||[];
+  const d={date:xD(r1[1]),title:xs(r1[3]),items:[]};
+  const modeOf=s=>MODES.find(m=>s.includes(m))||(/[線]/.test(s)?'地鐵':'其他');
+  for(let i=3;i<aoa.length;i++){
+    const r=aoa[i]||[];
+    const b=r[1],c=r[2],dd=r[3];
+    const bs=xs(b),dsS=xs(dd);
+    if(bs==='起訖時間'||bs==='時間'||dsS==='計畫項目')continue;
+    if(!bs&&!dsS&&!xs(c))continue;
+    if(dsS&&/\[.+\]|>>|＞＞|»/.test(dsS)){ // 交通路線
+      d.items.push({type:'transit',mode:modeOf(dsS),route:dsS,dur:'',budget:0});continue;
+    }
+    if(!dsS&&bs&&MODES.some(m=>bs.includes(m))&&!xT(b)){ // 交通明細列（需時/票價）
+      const dur=xs(r[8]),fare=num(r[9]);
+      const last=[...d.items].reverse().find(x=>x.type==='transit'&&!x.budget);
+      if(last&&MODES.some(m=>bs===m)){last.dur=last.dur||dur;last.budget=fare||last.budget;if(!last.mode||last.mode==='其他')last.mode=modeOf(bs)}
+      else d.items.push({type:'transit',mode:modeOf(bs),route:MODES.some(m=>bs===m)?'':bs,dur,budget:fare});
+      continue;
+    }
+    if(dsS){ // 活動
+      const t1=xT(b),t2=xT(c);
+      const link=r.find(v=>typeof v==='string'&&/^https?:/.test(v))||'';
+      const budget=num(r[9])||0;
+      let noteS=xs(r[7]);if(/^\d*\.\d{5,}$/.test(noteS))noteS=''; // 過濾殘留的匯率小數
+      if(!t1&&dsS.startsWith('*'))d.items.push({type:'note',name:dsS});
+      else d.items.push({type:'activity',t1,t2,name:dsS,note:noteS,budget,link});
+      continue;
+    }
+    if(bs&&!xT(b)){ // 只有B欄的文字 → 備註
+      if(/^https?:/.test(bs)){const last=d.items[d.items.length-1];if(last&&last.type==='note'){last.name+=' '+bs;continue}}
+      d.items.push({type:'note',name:bs});
+    }
+  }
+  if(!d.title)d.title=nm.replace(/行程/,'');
+  t.days.push(d);
+}
+function parsePacking(t,aoa){
+  t.packing=[];t.gifts=[];let cat='';
+  aoa.forEach(row=>{
+    const r=row||[],a=xs(r[0]),g=xs(r[3]);
+    if(g)t.gifts.push({name:g,done:false,what:''});
+    if(!a||a.startsWith('*'))return;
+    if(/^[◦•○·]/.test(a.replace(/^\s+/,'')))t.packing.push({cat:cat||'未分類',name:a.replace(/^\s*[◦•○·]\s*/,''),done:false,owner:''});
+    else cat=a;
+  });
+}
+function parseShops(t,aoa){
+  let cat='',shop=null;
+  const hourish=s=>/\d{3,4}\s*[-~－–]\s*\d{3,4}|\d{1,2}[:：]\d{2}/.test(s);
+  const mkShop=(name,info)=>{
+    const rm=name.match(/\(([0-9.]+)\)\s*$/);
+    shop={cat:cat||'未分類',name,info:info||'',rating:rm?rm[1]:'',link:'',booked:false,visited:false,open:false,menu:[]};
+    t.shops.push(shop);
+  };
+  aoa.forEach((row,i)=>{
+    const r=row||[],a=xs(r[0]),b=xs(r[1]),c=xs(r[2]);
+    if(i===0&&(c==='菜單'||a.includes('參考')))return;
+    const rest=r.slice(1).some(v=>v!=null&&xs(v)!=='');
+    if(a&&!rest){cat=a;return}                   // 只有A欄 → 分類（地點/料理）
+    if(b&&hourish(b)){
+      if(a)mkShop(a,b);                          // 東京式：A店名＋B營業時間
+      else if(shop)shop.info=(shop.info?shop.info+'｜':'')+b; // 九州式資訊列
+    }else if(b){if(a)cat=a;mkShop(b,'')}         // 九州式：A分類＋B店名
+    else if(a&&rest&&(!c||!shop))mkShop(a,'');   // A店名＋右側價格（東京成田式）
+    const price=jn(r[3]);
+    if(shop&&(c||price>10))shop.menu.push({item:c||shop.name,jpy:price>10?price:0,
+      desc:xs(r[5])||(typeof r[4]==='string'?xs(r[4]):'')});
+  });
+}
+function parseMenuSheet(t,nm,aoa){
+  const shop={cat:'菜單',name:nm.replace(/菜單/,''),info:'（自分頁匯入）',rating:'',link:'',booked:false,visited:false,open:false,menu:[]};
+  aoa.forEach(row=>{
+    const r=row||[];
+    const name=r.find(v=>typeof v==='string'&&v.trim());
+    const price=r.find(v=>typeof v==='number'&&v>10);
+    if(name)shop.menu.push({item:xs(name),jpy:price||0,desc:''});
+  });
+  if(shop.menu.length)t.shops.push(shop);
+}
+function parseShopping(t,nm,aoa){
+  const defCat=/KANEBO/i.test(nm)?'美妝':'藥妝';
+  // 版型偵測：前3列若有「品名」表頭 → 東京式（A品名 C日圓 D備注）
+  let hdr=null;
+  for(let i=0;i<Math.min(3,aoa.length);i++){
+    const r=aoa[i]||[];const j=r.findIndex(v=>xs(v)==='品名');
+    if(j>=0){hdr={row:i,name:j,jp:r.findIndex(v=>/^(JP|日圓|日币)/i.test(xs(v))),note:r.findIndex(v=>/備注|備註|说明/.test(xs(v)))};break}
+  }
+  if(hdr){
+    for(let i=hdr.row+1;i<aoa.length;i++){
+      const r=aoa[i]||[];const name=xs(r[hdr.name]);
+      if(!name||/^https?:/.test(name))continue;
+      t.shopping.push({cat:defCat,name,desc:hdr.note>=0?xs(r[hdr.note]):'',jpy:hdr.jp>=0?jn(r[hdr.jp]):0,done:false});
+    }
+    return;
+  }
+  let cat=defCat; // 九州式（B分類 C品名）
+  aoa.forEach(row=>{
+    const r=row||[];
+    const b=xs(r[1]),c=xs(r[2]);
+    if(b&&!c&&b.length<8)cat=b;
+    if(c&&!/^\d+\.?$/.test(c)&&!/^https?:/.test(c)){
+      const price=r.slice(3,12).map(jn).find(v=>v>20)||0;
+      t.shopping.push({cat,name:c,desc:xs(r[6]),jpy:price,done:false});
+    }
+    const m=xs(r[12]); // 右側附表（如佳麗寶）
+    if(m&&m.length>1&&!/佳麗寶|KANEBO/.test(m))t.shopping.push({cat:'美妝',name:m,desc:'',jpy:num(r[15])||0,done:false});
+  });
+}
+function dumpRef(t,nm,aoa){
+  const lines=aoa.map(row=>(row||[]).filter(v=>v!=null&&xs(v)!=='').map(v=>xs(v)).join('　')).filter(x=>x);
+  if(!lines.length)return;
+  t.refs.push({title:nm,type:'文字',content:lines.join('\n').slice(0,30000)});
+}
+
+/* ============ 啟動 ============ */
+(function(){
+  const ts=$('#themeSel');
+  Object.keys(THEMES).forEach(k=>{const o=el('option',null,'🎨 '+k);o.value=k;ts.appendChild(o)});
+  ts.value=DB.theme&&THEMES[DB.theme]?DB.theme:'海洋藍';
+  ts.onchange=()=>{DB.theme=ts.value;save();applyTheme();rerender()};
+})();
+applyTheme();
+render();
+
+/* ============ PWA（放上 HTTPS 網站後即可安裝為 APP） ============ */
+(function(){
+  function fallbackIcon(){
+    const cv=document.createElement('canvas');cv.width=cv.height=512;
+    const cx=cv.getContext('2d');
+    cx.fillStyle='#2f6fed';
+    if(cx.roundRect){cx.beginPath();cx.roundRect(0,0,512,512,110);cx.fill()}else cx.fillRect(0,0,512,512);
+    cx.font='300px serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('✈️',256,278);
+    return cv.toDataURL('image/png');
+  }
+  function buildManifest(icon){
+    try{
+      const mf={name:'旅行規劃',short_name:'旅行規劃',start_url:location.href,scope:location.href.replace(/[^/]*$/,''),
+        display:'standalone',background_color:'#dff0e4',theme_color:'#2f6fed',
+        icons:[{src:icon,sizes:'512x512',type:'image/png',purpose:'any'},{src:icon,sizes:'192x192',type:'image/png'}]};
+      const l=document.createElement('link');l.rel='manifest';
+      l.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));
+      document.head.appendChild(l);
+      const ap=document.createElement('link');ap.rel='apple-touch-icon';ap.href=icon;document.head.appendChild(ap);
+    }catch(_){}
+  }
+  // 優先使用同資料夾的 icon.png，讀不到才用內建圖示
+  const im=new Image();
+  im.onload=()=>buildManifest(new URL('icon.png',location.href).href);
+  im.onerror=()=>buildManifest(fallbackIcon());
+  im.src='icon.png';
+  try{
+    if('serviceWorker'in navigator&&/^https?:/.test(location.protocol))
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }catch(_){}
+  let installEv=null;
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();installEv=e;$('#installBtn').style.display='';
+  });
+  $('#installBtn').onclick=()=>{if(installEv){installEv.prompt();installEv=null;$('#installBtn').style.display='none'}};
+})();
+/* v1.2 */
+
+</script>
+</body>
+</html>
