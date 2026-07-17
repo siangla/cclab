@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生活儀表板</title>
+<style>
+:root{
+  --bg:#faf7f2; --card:#ffffff; --text:#3d3a35; --text2:#8a857c;
+  --line:#eee8df; --sage:#8fae8b; --sage-soft:#e8f0e7; --peach:#f0a58f;
+  --peach-soft:#fdeee9; --mist:#8fa8bf; --mist-soft:#e9eff5;
+  --gold:#d9b56a; --gold-soft:#f9f1de; --rose:#cf8f9e; --rose-soft:#f8ecef;
+  --danger:#d97b6c; --shadow:0 2px 12px rgba(90,80,60,.08);
+  --shadow-h:0 6px 20px rgba(90,80,60,.13); --radius:18px;
+}
+[data-theme="dark"]{
+  --bg:#262421; --card:#302d29; --text:#ece7de; --text2:#9c968a;
+  --line:#3d3934; --sage:#93b58f; --sage-soft:#3a423a; --peach:#e3a08c;
+  --peach-soft:#453832; --mist:#92abc2; --mist-soft:#333b43;
+  --gold:#d9b56a; --gold-soft:#41392a; --rose:#cf8f9e; --rose-soft:#41343a;
+  --danger:#d97b6c; --shadow:0 2px 12px rgba(0,0,0,.25);
+  --shadow-h:0 6px 20px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  transition:background .3s,color .3s;padding:20px;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:.95rem;color:var(--text);
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--sage)}
+::placeholder{color:var(--text2);opacity:.7}
+
+/* ── Topbar ── */
+.topbar{max-width:1200px;margin:0 auto 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.greet h1{font-size:1.5rem;font-weight:700}
+.greet p{color:var(--text2);font-size:.9rem;margin-top:2px}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.weather-pill{display:flex;align-items:center;gap:8px;background:var(--card);
+  border-radius:99px;padding:8px 16px;box-shadow:var(--shadow);font-size:.95rem}
+.weather-pill .wicon{font-size:1.3rem}
+.weather-pill .wrange{color:var(--text2);font-size:.8rem}
+.icon-btn{width:40px;height:40px;border-radius:50%;background:var(--card);
+  box-shadow:var(--shadow);font-size:1.1rem;display:flex;align-items:center;justify-content:center;
+  transition:transform .15s}
+.icon-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-h)}
+
+/* ── Grid ── */
+.grid{max-width:1200px;margin:0 auto;display:grid;gap:16px;
+  grid-template-columns:repeat(12,1fr);grid-auto-rows:auto}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px 20px;transition:box-shadow .2s,transform .2s,background .3s}
+.card:hover{box-shadow:var(--shadow-h)}
+.card h2{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card h2 .dot{width:8px;height:8px;border-radius:50%}
+.card h2 .more{margin-left:auto;color:var(--text2);font-size:1.1rem;line-height:1}
+.card h2 .more:hover{color:var(--text)}
+#card-clock{grid-column:span 3}
+#card-todo{grid-column:span 5;grid-row:span 2}
+#card-calendar{grid-column:span 4;grid-row:span 2}
+#card-habit{grid-column:span 3}
+#card-expense{grid-column:span 7}
+#card-mood{grid-column:span 5}
+#card-notes{grid-column:span 5}
+#card-countdown{grid-column:span 4}
+#card-year{grid-column:span 3}
+@media(max-width:980px){
+  .grid>.card{grid-column:span 12 !important;grid-row:auto !important}
+  body{padding:14px}
+}
+
+/* ── Clock ── */
+.clock-time{font-size:2.6rem;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.clock-time small{font-size:1.2rem;color:var(--text2)}
+.clock-sub{color:var(--text2);font-size:.9rem;margin-top:4px}
+
+/* ── Todo ── */
+.progress-wrap{margin-bottom:12px}
+.progress-label{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text2);margin-bottom:5px}
+.progress-bar{height:8px;background:var(--sage-soft);border-radius:99px;overflow:hidden}
+.progress-bar>div{height:100%;background:var(--sage);border-radius:99px;transition:width .4s}
+.todo-add{display:flex;gap:8px;margin-bottom:12px}
+.todo-add input[type=text]{flex:1}
+.todo-add select{width:70px;padding:8px 6px}
+.btn{background:var(--sage);color:#fff;border-radius:10px;padding:8px 16px;font-weight:600;
+  transition:filter .15s,transform .15s}
+.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn.small{padding:6px 12px;font-size:.85rem}
+.btn.ghost{background:var(--sage-soft);color:var(--sage)}
+ul.plain{list-style:none}
+.todo-item{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:10px;
+  border-bottom:1px solid var(--line);transition:background .15s}
+.todo-item:hover{background:var(--bg)}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--text2)}
+.todo-item .prio{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.prio-h{background:var(--danger)}.prio-m{background:var(--gold)}.prio-l{background:var(--mist)}
+.todo-text{flex:1;font-size:.95rem;word-break:break-all}
+.todo-item .del,.li-del{color:var(--text2);opacity:0;transition:opacity .15s;font-size:1rem}
+.todo-item:hover .del,.cd-item:hover .li-del,.note:hover .li-del{opacity:1}
+.todo-item .del:hover,.li-del:hover{color:var(--danger)}
+.chk{width:19px;height:19px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#fff;transition:all .2s}
+.chk.on{background:var(--sage);border-color:var(--sage)}
+.empty{color:var(--text2);font-size:.88rem;text-align:center;padding:16px 0}
+
+/* ── Habits ── */
+.habit-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.habit-row:last-child{border-bottom:none}
+.habit-ico{font-size:1.2rem}
+.habit-name{flex:1;font-size:.92rem}
+.habit-streak{font-size:.78rem;color:var(--peach);white-space:nowrap}
+.habit-week{display:flex;gap:3px}
+.hcell{width:11px;height:11px;border-radius:3px;background:var(--line)}
+.hcell.on{background:var(--sage)}
+.habit-check{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;transition:all .2s;flex-shrink:0}
+.habit-check.on{background:var(--peach);border-color:var(--peach);animation:pop .3s}
+@keyframes pop{50%{transform:scale(1.25)}}
+
+/* ── Calendar ── */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head b{font-size:.95rem}
+.cal-nav{color:var(--text2);font-size:1rem;padding:4px 10px;border-radius:8px}
+.cal-nav:hover{background:var(--bg);color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.cal-grid .wd{font-size:.72rem;color:var(--text2);padding:4px 0}
+.cal-day{position:relative;padding:7px 0;border-radius:9px;font-size:.85rem;cursor:pointer;
+  transition:background .15s}
+.cal-day:hover{background:var(--mist-soft)}
+.cal-day.dim{color:var(--text2);opacity:.4}
+.cal-day.today{background:var(--sage);color:#fff;font-weight:700}
+.cal-day .evdot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--peach)}
+.cal-editor{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;display:none}
+.cal-editor.show{display:block}
+.cal-editor .ce-date{font-size:.85rem;font-weight:700;margin-bottom:6px}
+.cal-editor .ce-row{display:flex;gap:8px}
+.cal-editor input{flex:1}
+.ev-list{margin-top:8px}
+.ev-item{display:flex;align-items:center;gap:8px;font-size:.88rem;padding:4px 0;color:var(--text2)}
+.ev-item .li-del{opacity:1}
+
+/* ── Expense ── */
+.exp-top{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.exp-stat{flex:1;min-width:100px;background:var(--bg);border-radius:14px;padding:12px 14px}
+.exp-stat .lbl{font-size:.75rem;color:var(--text2)}
+.exp-stat .val{font-size:1.25rem;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.exp-stat.income .val{color:var(--sage)}
+.exp-stat.spend .val{color:var(--peach)}
+.exp-add{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.exp-add input[type=number]{width:110px}
+.exp-add input[type=text]{flex:1;min-width:110px}
+.budget-wrap{margin-bottom:14px}
+.charts{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.chart-box{flex:1;min-width:220px}
+.chart-box canvas{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:.78rem;color:var(--text2)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.exp-recent{margin-top:10px;max-height:150px;overflow-y:auto}
+.exp-row{display:flex;align-items:center;gap:8px;font-size:.86rem;padding:5px 4px;border-bottom:1px solid var(--line)}
+.exp-row .cat{background:var(--mist-soft);color:var(--mist);border-radius:6px;padding:2px 8px;font-size:.75rem}
+.exp-row .amt{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
+.exp-row .amt.in{color:var(--sage)}
+.exp-row .li-del{opacity:1;margin-left:4px}
+
+/* ── Mood ── */
+.mood-pick{display:flex;gap:10px;justify-content:space-around;margin-bottom:12px}
+.mood-btn{font-size:1.7rem;padding:6px;border-radius:12px;filter:grayscale(.7);opacity:.55;
+  transition:all .2s}
+.mood-btn:hover{transform:scale(1.15);filter:none;opacity:1}
+.mood-btn.on{filter:none;opacity:1;background:var(--gold-soft);transform:scale(1.12)}
+.mood-note{width:100%;margin-bottom:12px}
+.mood-strip{display:flex;gap:2px;align-items:flex-end;height:44px}
+.mood-strip i{flex:1;border-radius:3px 3px 0 0;background:var(--line);min-height:6px}
+.mood-strip-lbl{font-size:.72rem;color:var(--text2);margin-top:4px;display:flex;justify-content:space-between}
+
+/* ── Notes ── */
+.notes-wrap{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
+.note{background:var(--gold-soft);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start}
+.note.pinned{background:var(--peach-soft)}
+.note textarea{flex:1;background:none;border:none;resize:none;padding:0;font-size:.9rem;line-height:1.5}
+.note .pin{font-size:.9rem;opacity:.4}
+.note.pinned .pin{opacity:1}
+
+/* ── Countdown ── */
+.cd-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.cd-item:last-child{border-bottom:none}
+.cd-name{flex:1;font-size:.92rem}
+.cd-name small{display:block;color:var(--text2);font-size:.75rem}
+.cd-days{font-weight:700;font-size:1.05rem;color:var(--mist);white-space:nowrap}
+.cd-days.past{color:var(--text2);font-size:.85rem;font-weight:400}
+.cd-days.soon{color:var(--peach)}
+.cd-add{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.cd-add input[type=text]{flex:1;min-width:90px}
+
+/* ── Year ── */
+.year-pct{font-size:2.1rem;font-weight:700;color:var(--rose)}
+.year-bar{height:10px;background:var(--rose-soft);border-radius:99px;overflow:hidden;margin:10px 0}
+.year-bar>div{height:100%;background:var(--rose);border-radius:99px;transition:width .6s}
+.year-sub{font-size:.82rem;color:var(--text2)}
+
+/* ── Modal ── */
+.overlay{position:fixed;inset:0;background:rgba(40,35,28,.45);display:none;
+  align-items:center;justify-content:center;z-index:50;padding:16px}
+.overlay.show{display:flex}
+.modal{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:420px;
+  box-shadow:var(--shadow-h);max-height:88vh;overflow-y:auto}
+.modal h3{font-size:1.1rem;margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:5px}
+.field input,.field select{width:100%}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.toggle-list{display:flex;flex-direction:column;gap:8px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;font-size:.9rem}
+.switch{position:relative;width:40px;height:22px;background:var(--line);border-radius:99px;transition:background .2s}
+.switch.on{background:var(--sage)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:left .2s}
+.switch.on::after{left:21px}
+.hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+.hidden{display:none !important}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--text);color:var(--bg);padding:10px 22px;border-radius:99px;font-size:.9rem;
+  transition:transform .3s;z-index:60}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="greet">
+    <h1 id="greeting">你好</h1>
+    <p id="dateline"></p>
+  </div>
+  <div class="top-right">
+    <div class="weather-pill hidden" id="weather">
+      <span class="wicon" id="w-icon"></span>
+      <span id="w-temp"></span>
+      <span class="wrange" id="w-range"></span>
+    </div>
+    <button class="icon-btn" id="btn-theme" title="切換深淺色">🌙</button>
+    <button class="icon-btn" id="btn-settings" title="設定">⚙️</button>
+  </div>
+</header>
+
+<main class="grid">
+
+  <section class="card" id="card-clock">
+    <h2><span class="dot" style="background:var(--mist)"></span>時鐘</h2>
+    <div class="clock-time" id="clock">--:--<small>:--</small></div>
+    <div class="clock-sub" id="clock-sub"></div>
+  </section>
+
+  <section class="card" id="card-todo">
+    <h2><span class="dot" style="background:var(--sage)"></span>今日待辦</h2>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>完成進度</span><span id="todo-pct">0%</span></div>
+      <div class="progress-bar"><div id="todo-bar" style="width:0%"></div></div>
+    </div>
+    <form class="todo-add" id="todo-form">
+      <input type="text" id="todo-input" placeholder="新增待辦…" maxlength="80">
+      <select id="todo-prio"><option value="m">中</option><option value="h">高</option><option value="l">低</option></select>
+      <button class="btn" type="submit">＋</button>
+    </form>
+    <ul class="plain" id="todo-list"></ul>
+  </section>
+
+  <section class="card" id="card-calendar">
+    <div class="cal-head">
+      <button class="cal-nav" id="cal-prev">‹</button>
+      <b id="cal-title"></b>
+      <button class="cal-nav" id="cal-next">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-editor" id="cal-editor">
+      <div class="ce-date" id="ce-date"></div>
+      <div class="ce-row">
+        <input type="text" id="ce-input" placeholder="新增事件備註…" maxlength="40">
+        <button class="btn small" id="ce-add">加入</button>
+      </div>
+      <div class="ev-list" id="ce-list"></div>
+    </div>
+  </section>
+
+  <section class="card" id="card-habit">
+    <h2><span class="dot" style="background:var(--peach)"></span>習慣追蹤
+      <button class="more" id="habit-add-btn" title="新增習慣">＋</button></h2>
+    <div id="habit-list"></div>
+  </section>
+
+  <section class="card" id="card-expense">
+    <h2><span class="dot" style="background:var(--gold)"></span>本月記帳</h2>
+    <div class="exp-top">
+      <div class="exp-stat income"><div class="lbl">收入</div><div class="val" id="exp-in">$0</div></div>
+      <div class="exp-stat spend"><div class="lbl">支出</div><div class="val" id="exp-out">$0</div></div>
+      <div class="exp-stat"><div class="lbl">結餘</div><div class="val" id="exp-net">$0</div></div>
+    </div>
+    <div class="budget-wrap" id="budget-wrap">
+      <div class="progress-label"><span>本月預算</span><span id="budget-pct"></span></div>
+      <div class="progress-bar"><div id="budget-bar" style="width:0%;background:var(--gold)"></div></div>
+    </div>
+    <form class="exp-add" id="exp-form">
+      <select id="exp-type"><option value="out">支出</option><option value="in">收入</option></select>
+      <input type="number" id="exp-amt" placeholder="金額" min="0" step="1" required>
+      <select id="exp-cat"></select>
+      <input type="text" id="exp-note" placeholder="備註（選填）" maxlength="30">
+      <button class="btn" type="submit">記一筆</button>
+    </form>
+    <div class="charts">
+      <div class="chart-box"><canvas id="chart-donut" width="300" height="180"></canvas><div class="legend" id="donut-legend"></div></div>
+      <div class="chart-box"><canvas id="chart-line" width="340" height="180"></canvas></div>
+    </div>
+    <div class="exp-recent" id="exp-recent"></div>
+  </section>
+
+  <section class="card" id="card-mood">
+    <h2><span class="dot" style="background:var(--rose)"></span>今日心情</h2>
+    <div class="mood-pick" id="mood-pick"></div>
+    <input type="text" class="mood-note" id="mood-note" placeholder="今天想說一句話…" maxlength="60">
+    <div class="mood-strip" id="mood-strip"></div>
+    <div class="mood-strip-lbl"><span>30 天前</span><span>今天</span></div>
+  </section>
+
+  <section class="card" id="card-notes">
+    <h2><span class="dot" style="background:var(--gold)"></span>快速筆記
+      <button class="more" id="note-add-btn" title="新增筆記">＋</button></h2>
+    <div class="notes-wrap" id="notes-wrap"></div>
+  </section>
+
+  <section class="card" id="card-countdown">
+    <h2><span class="dot" style="background:var(--mist)"></span>倒數日</h2>
+    <div id="cd-list"></div>
+    <form class="cd-add" id="cd-form">
+      <input type="text" id="cd-name" placeholder="事件名稱" maxlength="20" required>
+      <input type="date" id="cd-date" required>
+      <button class="btn small" type="submit">＋</button>
+    </form>
+  </section>
+
+  <section class="card" id="card-year">
+    <h2><span class="dot" style="background:var(--rose)"></span>年度進度</h2>
+    <div class="year-pct" id="year-pct">0%</div>
+    <div class="year-bar"><div id="year-bar" style="width:0%"></div></div>
+    <div class="year-sub" id="year-sub"></div>
+  </section>
+
+</main>
+
+<!-- 設定 Modal -->
+<div class="overlay" id="ov-settings">
+  <div class="modal">
+    <h3>⚙️ 設定</h3>
+    <div class="field"><label>你的名字</label><input type="text" id="set-name" maxlength="20"></div>
+    <div class="field"><label>天氣城市（例：Taipei）</label><input type="text" id="set-city" maxlength="30"></div>
+    <div class="field"><label>時制</label>
+      <select id="set-hour"><option value="24">24 小時制</option><option value="12">12 小時制</option></select></div>
+    <div class="field"><label>每月預算（0 = 不顯示）</label><input type="number" id="set-budget" min="0"></div>
+    <hr class="hr">
+    <label style="font-size:.82rem;color:var(--text2)">顯示模組</label>
+    <div class="toggle-list" id="module-toggles" style="margin-top:8px"></div>
+    <hr class="hr">
+    <div style="display:flex;gap:10px">
+      <button class="btn ghost small" id="btn-export">匯出備份</button>
+      <button class="btn ghost small" id="btn-import">匯入備份</button>
+      <input type="file" id="import-file" accept=".json" class="hidden">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="set-cancel">取消</button>
+      <button class="btn" id="set-save">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增習慣 Modal -->
+<div class="overlay" id="ov-habit">
+  <div class="modal">
+    <h3>新增習慣</h3>
+    <div class="field"><label>名稱</label><input type="text" id="hb-name" maxlength="15" placeholder="例：運動 30 分鐘"></div>
+    <div class="field"><label>圖示（一個 emoji）</label><input type="text" id="hb-icon" maxlength="2" placeholder="🏃"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="hb-cancel">取消</button>
+      <button class="btn" id="hb-save">新增</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ 工具 ═══ */
+const $=s=>document.querySelector(s);
+const store={
+  get(k,d){try{const v=localStorage.getItem('lifedash_'+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){localStorage.setItem('lifedash_'+k,JSON.stringify(v))}
+};
+const todayKey=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt$=n=>'$'+Math.round(n).toLocaleString();
+let toastTimer;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1800)}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+
+/* ═══ 設定 ═══ */
+let settings=store.get('settings',{name:'',city:'Taipei',hour:'24',budget:0,theme:'light',
+  modules:{clock:1,todo:1,calendar:1,habit:1,expense:1,mood:1,notes:1,countdown:1,year:1}});
+const MODULE_NAMES={clock:'時鐘',todo:'待辦事項',calendar:'月曆',habit:'習慣追蹤',
+  expense:'記帳',mood:'每日心情',notes:'快速筆記',countdown:'倒數日',year:'年度進度'};
+function saveSettings(){store.set('settings',settings)}
+function applyModules(){
+  for(const k in MODULE_NAMES){
+    const el=$('#card-'+k);
+    if(el)el.classList.toggle('hidden',!settings.modules[k]);
+  }
+}
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',settings.theme);
+  $('#btn-theme').textContent=settings.theme==='dark'?'☀️':'🌙';
+}
+$('#btn-theme').onclick=()=>{settings.theme=settings.theme==='dark'?'light':'dark';
+  saveSettings();applyTheme();renderExpense()};
+
+/* ═══ 頂欄問候 ═══ */
+function renderGreeting(){
+  const h=new Date().getHours();
+  const part=h<5?'夜深了':h<11?'早安':h<14?'午安':h<18?'下午好':'晚安';
+  $('#greeting').textContent=part+(settings.name?'，'+settings.name:'')+' 👋';
+  const d=new Date();
+  $('#dateline').textContent=d.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+}
+
+/* ═══ 時鐘 ═══ */
+function tickClock(){
+  const d=new Date();let h=d.getHours();let suffix='';
+  if(settings.hour==='12'){suffix=h<12?' AM':' PM';h=h%12||12}
+  $('#clock').innerHTML=String(h).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')
+    +'<small>:'+String(d.getSeconds()).padStart(2,'0')+suffix+'</small>';
+  $('#clock-sub').textContent=d.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
+  if(d.getHours()===0&&d.getMinutes()===0&&d.getSeconds()===0){cleanupTodos();renderAll()}
+}
+setInterval(tickClock,1000);
+
+/* ═══ 天氣（Open-Meteo 免金鑰）═══ */
+const WCODE={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',
+  61:'🌧️',63:'🌧️',65:'⛈️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+async function loadWeather(){
+  try{
+    const g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='
+      +encodeURIComponent(settings.city)+'&count=1&language=zh').then(r=>r.json());
+    if(!g.results||!g.results.length)return;
+    const{latitude:lat,longitude:lon,name}=g.results[0];
+    const w=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      +`&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1`)
+      .then(r=>r.json());
+    $('#w-icon').textContent=WCODE[w.current.weather_code]||'🌡️';
+    $('#w-temp').textContent=Math.round(w.current.temperature_2m)+'° '+name;
+    $('#w-range').textContent=Math.round(w.daily.temperature_2m_min[0])+'°/'+Math.round(w.daily.temperature_2m_max[0])+'°';
+    $('#weather').classList.remove('hidden');
+  }catch(e){/* 離線時隱藏 */}
+}
+
+/* ═══ 待辦 ═══ */
+let todos=store.get('todos',[]);
+function cleanupTodos(){
+  const tk=todayKey();
+  todos=todos.filter(t=>!(t.done&&t.doneDate&&t.doneDate!==tk));
+  store.set('todos',todos);
+}
+function renderTodos(){
+  const ul=$('#todo-list');ul.innerHTML='';
+  const sorted=[...todos].sort((a,b)=>a.done-b.done);
+  if(!sorted.length)ul.innerHTML='<div class="empty">目前沒有待辦，享受悠閒時光 ☕</div>';
+  sorted.forEach(t=>{
+    const li=document.createElement('li');
+    li.className='todo-item'+(t.done?' done':'');
+    li.draggable=!t.done;
+    li.dataset.id=t.id;
+    li.innerHTML=`<span class="prio prio-${t.prio}"></span>
+      <button type="button" class="chk${t.done?' on':''}">${t.done?'✓':''}</button>
+      <span class="todo-text">${esc(t.text)}</span>
+      <button type="button" class="del">✕</button>`;
+    li.querySelector('.chk').onclick=()=>{t.done=!t.done;t.doneDate=t.done?todayKey():null;
+      store.set('todos',todos);renderTodos()};
+    li.querySelector('.del').onclick=()=>{todos=todos.filter(x=>x.id!==t.id);
+      store.set('todos',todos);renderTodos()};
+    li.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',t.id));
+    li.addEventListener('dragover',e=>e.preventDefault());
+    li.addEventListener('drop',e=>{
+      e.preventDefault();
+      const fromId=e.dataTransfer.getData('text/plain');
+      const fi=todos.findIndex(x=>x.id===fromId),ti=todos.findIndex(x=>x.id===t.id);
+      if(fi<0||ti<0||fi===ti)return;
+      todos.splice(ti,0,todos.splice(fi,1)[0]);
+      store.set('todos',todos);renderTodos();
+    });
+    ul.appendChild(li);
+  });
+  const done=todos.filter(t=>t.done).length;
+  const pct=todos.length?Math.round(done/todos.length*100):0;
+  $('#todo-pct').textContent=pct+'%';
+  $('#todo-bar').style.width=pct+'%';
+}
+$('#todo-form').onsubmit=e=>{
+  e.preventDefault();
+  const v=$('#todo-input').value.trim();if(!v)return;
+  todos.push({id:Date.now()+'',text:v,prio:$('#todo-prio').value,done:false,doneDate:null});
+  store.set('todos',todos);$('#todo-input').value='';renderTodos();
+};
+
+/* ═══ 習慣 ═══ */
+let habits=store.get('habits',[{id:'h1',name:'喝水 2000ml',icon:'💧',log:{}},{id:'h2',name:'運動 30 分鐘',icon:'🏃',log:{}}]);
+function streak(h){
+  let n=0;const d=new Date();
+  if(!h.log[todayKey(d)])d.setDate(d.getDate()-1);
+  while(h.log[todayKey(d)]){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+function renderHabits(){
+  const box=$('#habit-list');box.innerHTML='';
+  if(!habits.length)box.innerHTML='<div class="empty">點右上 ＋ 新增第一個習慣</div>';
+  habits.forEach(h=>{
+    const row=document.createElement('div');row.className='habit-row';
+    const tk=todayKey();const s=streak(h);
+    let week='';
+    for(let i=6;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      week+=`<i class="hcell${h.log[todayKey(d)]?' on':''}"></i>`;
+    }
+    row.innerHTML=`<span class="habit-ico">${h.icon}</span>
+      <span class="habit-name">${esc(h.name)}${s>1?`<span class="habit-streak"> 🔥${s}天</span>`:''}</span>
+      <span class="habit-week">${week}</span>
+      <button type="button" class="habit-check${h.log[tk]?' on':''}">${h.log[tk]?'✓':''}</button>`;
+    row.querySelector('.habit-check').onclick=()=>{
+      if(h.log[tk])delete h.log[tk];else h.log[tk]=1;
+      store.set('habits',habits);renderHabits();
+    };
+    row.querySelector('.habit-ico').onclick=()=>{
+      if(confirm('刪除習慣「'+h.name+'」？')){habits=habits.filter(x=>x.id!==h.id);
+        store.set('habits',habits);renderHabits()}
+    };
+    box.appendChild(row);
+  });
+}
+$('#habit-add-btn').onclick=()=>{$('#hb-name').value='';$('#hb-icon').value='';
+  $('#ov-habit').classList.add('show')};
+$('#hb-cancel').onclick=()=>$('#ov-habit').classList.remove('show');
+$('#hb-save').onclick=()=>{
+  const name=$('#hb-name').value.trim();if(!name)return;
+  habits.push({id:'h'+Date.now(),name,icon:$('#hb-icon').value.trim()||'⭐',log:{}});
+  store.set('habits',habits);$('#ov-habit').classList.remove('show');renderHabits();
+};
+
+/* ═══ 月曆 ═══ */
+let events=store.get('events',{});
+let calCur=new Date();calCur.setDate(1);
+let calSelected=null;
+function renderCalendar(){
+  $('#cal-title').textContent=calCur.getFullYear()+' 年 '+(calCur.getMonth()+1)+' 月';
+  const g=$('#cal-grid');g.innerHTML='';
+  ['日','一','二','三','四','五','六'].forEach(w=>{
+    const el=document.createElement('div');el.className='wd';el.textContent=w;g.appendChild(el);
+  });
+  const first=new Date(calCur);first.setDate(1-first.getDay());
+  const tk=todayKey();
+  for(let i=0;i<42;i++){
+    const d=new Date(first);d.setDate(first.getDate()+i);
+    const k=todayKey(d);
+    const el=document.createElement('div');
+    el.className='cal-day'+(d.getMonth()!==calCur.getMonth()?' dim':'')+(k===tk?' today':'');
+    el.innerHTML=d.getDate()+((events[k]&&events[k].length)?'<span class="evdot"></span>':'');
+    el.onclick=()=>{calSelected=k;renderCalEditor()};
+    g.appendChild(el);
+  }
+}
+function renderCalEditor(){
+  const ed=$('#cal-editor');
+  if(!calSelected){ed.classList.remove('show');return}
+  ed.classList.add('show');
+  $('#ce-date').textContent=calSelected+' 的事件';
+  const list=$('#ce-list');list.innerHTML='';
+  (events[calSelected]||[]).forEach((ev,i)=>{
+    const row=document.createElement('div');row.className='ev-item';
+    row.innerHTML=`<span>•</span><span style="flex:1">${esc(ev)}</span><button type="button" class="li-del">✕</button>`;
+    row.querySelector('.li-del').onclick=()=>{
+      events[calSelected].splice(i,1);
+      if(!events[calSelected].length)delete events[calSelected];
+      store.set('events',events);renderCalendar();renderCalEditor();
+    };
+    list.appendChild(row);
+  });
+}
+$('#ce-add').onclick=()=>{
+  const v=$('#ce-input').value.trim();if(!v||!calSelected)return;
+  (events[calSelected]=events[calSelected]||[]).push(v);
+  store.set('events',events);$('#ce-input').value='';renderCalendar();renderCalEditor();
+};
+$('#cal-prev').onclick=()=>{calCur.setMonth(calCur.getMonth()-1);renderCalendar()};
+$('#cal-next').onclick=()=>{calCur.setMonth(calCur.getMonth()+1);renderCalendar()};
+
+/* ═══ 記帳 ═══ */
+const CATS=['餐飲','交通','購物','娛樂','其他'];
+const CAT_COLORS=['--sage','--peach','--mist','--gold','--rose'];
+let expenses=store.get('expenses',[]);
+CATS.forEach(c=>{const o=document.createElement('option');o.value=o.textContent=c;$('#exp-cat').appendChild(o)});
+$('#exp-form').onsubmit=e=>{
+  e.preventDefault();
+  const amt=parseFloat($('#exp-amt').value);if(!amt||amt<=0)return;
+  expenses.push({id:Date.now()+'',type:$('#exp-type').value,amt,
+    cat:$('#exp-cat').value,note:$('#exp-note').value.trim(),date:todayKey()});
+  store.set('expenses',expenses);
+  $('#exp-amt').value='';$('#exp-note').value='';
+  renderExpense();toast('已記錄 ✓');
+};
+function monthExpenses(){
+  const pre=todayKey().slice(0,7);
+  return expenses.filter(x=>x.date.startsWith(pre));
+}
+function renderExpense(){
+  const m=monthExpenses();
+  const inc=m.filter(x=>x.type==='in').reduce((s,x)=>s+x.amt,0);
+  const out=m.filter(x=>x.type==='out').reduce((s,x)=>s+x.amt,0);
+  $('#exp-in').textContent=fmt$(inc);
+  $('#exp-out').textContent=fmt$(out);
+  $('#exp-net').textContent=fmt$(inc-out);
+  // 預算
+  const bw=$('#budget-wrap');
+  if(settings.budget>0){
+    bw.classList.remove('hidden');
+    const pct=Math.min(100,Math.round(out/settings.budget*100));
+    $('#budget-pct').textContent=fmt$(out)+' / '+fmt$(settings.budget)+'（'+pct+'%）';
+    const bar=$('#budget-bar');bar.style.width=pct+'%';
+    bar.style.background=pct>=100?cssVar('--danger'):cssVar('--gold');
+  }else bw.classList.add('hidden');
+  drawDonut(m);drawLine();renderRecent(m);
+}
+function renderRecent(m){
+  const box=$('#exp-recent');box.innerHTML='';
+  [...m].reverse().slice(0,8).forEach(x=>{
+    const row=document.createElement('div');row.className='exp-row';
+    row.innerHTML=`<span class="cat">${x.type==='in'?'收入':esc(x.cat)}</span>
+      <span>${esc(x.note)||''}</span><span style="color:var(--text2);font-size:.75rem">${x.date.slice(5)}</span>
+      <span class="amt${x.type==='in'?' in':''}">${x.type==='in'?'+':'−'}${fmt$(x.amt)}</span>
+      <button type="button" class="li-del">✕</button>`;
+    row.querySelector('.li-del').onclick=()=>{expenses=expenses.filter(y=>y.id!==x.id);
+      store.set('expenses',expenses);renderExpense()};
+    box.appendChild(row);
+  });
+}
+function drawDonut(m){
+  const cv=$('#chart-donut'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const sums=CATS.map(c=>m.filter(x=>x.type==='out'&&x.cat===c).reduce((s,x)=>s+x.amt,0));
+  const total=sums.reduce((a,b)=>a+b,0);
+  const cx=90,cy=90,r=70,ir=44;
+  const leg=$('#donut-legend');leg.innerHTML='';
+  if(!total){
+    ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.arc(cx,cy,ir,0,7,true);
+    ctx.fillStyle=cssVar('--line');ctx.fill();
+    ctx.fillStyle=cssVar('--text2');ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('尚無支出',cx,cy+4);return;
+  }
+  let a=-Math.PI/2;
+  sums.forEach((v,i)=>{
+    if(!v)return;
+    const a2=a+v/total*Math.PI*2;
+    ctx.beginPath();ctx.arc(cx,cy,r,a,a2);ctx.arc(cx,cy,ir,a2,a,true);
+    ctx.fillStyle=cssVar(CAT_COLORS[i]);ctx.fill();a=a2;
+    const s=document.createElement('span');
+    s.innerHTML=`<i style="background:var(${CAT_COLORS[i]})"></i>${CATS[i]} ${Math.round(v/total*100)}%`;
+    leg.appendChild(s);
+  });
+  ctx.fillStyle=cssVar('--text');ctx.font='bold 15px sans-serif';ctx.textAlign='center';
+  ctx.fillText(fmt$(total),cx,cy+5);
+}
+function drawLine(){
+  const cv=$('#chart-line'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const days=[],vals=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const k=todayKey(d);days.push(k);
+    vals.push(expenses.filter(x=>x.type==='out'&&x.date===k).reduce((s,x)=>s+x.amt,0));
+  }
+  const W=cv.width,H=cv.height,pl=8,pb=22,pt=14;
+  const max=Math.max(...vals,1);
+  const X=i=>pl+i/(29)*(W-pl-8);
+  const Y=v=>H-pb-(v/max)*(H-pb-pt);
+  // 面積
+  ctx.beginPath();ctx.moveTo(X(0),Y(vals[0]));
+  vals.forEach((v,i)=>ctx.lineTo(X(i),Y(v)));
+  ctx.lineTo(X(29),H-pb);ctx.lineTo(X(0),H-pb);ctx.closePath();
+  const grad=ctx.createLinearGradient(0,pt,0,H-pb);
+  grad.addColorStop(0,cssVar('--peach')+'55');grad.addColorStop(1,cssVar('--peach')+'05');
+  ctx.fillStyle=grad;ctx.fill();
+  // 線
+  ctx.beginPath();ctx.moveTo(X(0),Y(vals[0]));
+  vals.forEach((v,i)=>ctx.lineTo(X(i),Y(v)));
+  ctx.strokeStyle=cssVar('--peach');ctx.lineWidth=2;ctx.stroke();
+  // 標籤
+  ctx.fillStyle=cssVar('--text2');ctx.font='10px sans-serif';
+  ctx.textAlign='left';ctx.fillText('近 30 天支出',pl,12);
+  ctx.textAlign='right';ctx.fillText('最高 '+fmt$(max),W-8,12);
+}
+
+/* ═══ 心情 ═══ */
+const MOODS=['😢','🙁','😐','🙂','😄'];
+let moods=store.get('moods',{});
+function renderMood(){
+  const tk=todayKey();const today=moods[tk]||{};
+  const pick=$('#mood-pick');pick.innerHTML='';
+  MOODS.forEach((m,i)=>{
+    const b=document.createElement('button');
+    b.type='button';b.className='mood-btn'+(today.level===i+1?' on':'');b.textContent=m;
+    b.onclick=()=>{moods[tk]={...(moods[tk]||{}),level:i+1};
+      store.set('moods',moods);renderMood()};
+    pick.appendChild(b);
+  });
+  $('#mood-note').value=today.note||'';
+  const strip=$('#mood-strip');strip.innerHTML='';
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const rec=moods[todayKey(d)];
+    const bar=document.createElement('i');
+    if(rec&&rec.level){
+      bar.style.height=(rec.level*20)+'%';
+      bar.style.background=['var(--mist)','var(--mist)','var(--gold)','var(--sage)','var(--peach)'][rec.level-1];
+      bar.title=todayKey(d)+' '+MOODS[rec.level-1]+(rec.note?' '+rec.note:'');
+    }
+    strip.appendChild(bar);
+  }
+}
+$('#mood-note').addEventListener('change',e=>{
+  const tk=todayKey();
+  moods[tk]={...(moods[tk]||{}),note:e.target.value.trim()};
+  store.set('moods',moods);renderMood();
+});
+
+/* ═══ 筆記 ═══ */
+let notes=store.get('notes',[]);
+function renderNotes(){
+  const wrap=$('#notes-wrap');wrap.innerHTML='';
+  if(!notes.length)wrap.innerHTML='<div class="empty">點右上 ＋ 新增便利貼</div>';
+  [...notes].sort((a,b)=>b.pin-a.pin).forEach(n=>{
+    const el=document.createElement('div');el.className='note'+(n.pin?' pinned':'');
+    el.innerHTML=`<button type="button" class="pin">📌</button>
+      <textarea rows="2" maxlength="200" placeholder="寫點什麼…">${esc(n.text)}</textarea>
+      <button type="button" class="li-del">✕</button>`;
+    const ta=el.querySelector('textarea');
+    ta.oninput=()=>{n.text=ta.value;store.set('notes',notes)};
+    el.querySelector('.pin').onclick=()=>{n.pin=!n.pin;store.set('notes',notes);renderNotes()};
+    el.querySelector('.li-del').onclick=()=>{notes=notes.filter(x=>x.id!==n.id);
+      store.set('notes',notes);renderNotes()};
+    wrap.appendChild(el);
+  });
+}
+$('#note-add-btn').onclick=()=>{notes.unshift({id:Date.now()+'',text:'',pin:false});
+  store.set('notes',notes);renderNotes();
+  const ta=$('#notes-wrap textarea');if(ta)ta.focus()};
+
+/* ═══ 倒數日 ═══ */
+let countdowns=store.get('countdowns',[]);
+function renderCountdowns(){
+  const box=$('#cd-list');box.innerHTML='';
+  if(!countdowns.length)box.innerHTML='<div class="empty">新增生日、旅行、考試倒數 🎯</div>';
+  const now=new Date(todayKey());
+  [...countdowns].sort((a,b)=>new Date(a.date)-new Date(b.date))
+    .sort((a,b)=>(new Date(a.date)<now)-(new Date(b.date)<now))
+    .forEach(c=>{
+      const diff=Math.round((new Date(c.date)-now)/86400000);
+      const el=document.createElement('div');el.className='cd-item';
+      let days,cls='';
+      if(diff>0){days=diff+' 天';if(diff<=7)cls=' soon'}
+      else if(diff===0){days='就是今天！';cls=' soon'}
+      else{days='已過 '+(-diff)+' 天';cls=' past'}
+      el.innerHTML=`<span class="cd-name">${esc(c.name)}<small>${c.date}</small></span>
+        <span class="cd-days${cls}">${days}</span><button type="button" class="li-del">✕</button>`;
+      el.querySelector('.li-del').onclick=()=>{countdowns=countdowns.filter(x=>x.id!==c.id);
+        store.set('countdowns',countdowns);renderCountdowns()};
+      box.appendChild(el);
+    });
+}
+$('#cd-form').onsubmit=e=>{
+  e.preventDefault();
+  const name=$('#cd-name').value.trim(),date=$('#cd-date').value;
+  if(!name||!date)return;
+  countdowns.push({id:Date.now()+'',name,date});
+  store.set('countdowns',countdowns);
+  $('#cd-name').value='';$('#cd-date').value='';renderCountdowns();
+};
+
+/* ═══ 年度進度 ═══ */
+function renderYear(){
+  const now=new Date(),y=now.getFullYear();
+  const start=new Date(y,0,1),end=new Date(y+1,0,1);
+  const passed=Math.floor((now-start)/86400000)+1;
+  const total=Math.round((end-start)/86400000);
+  const pct=(passed/total*100).toFixed(1);
+  $('#year-pct').textContent=pct+'%';
+  $('#year-bar').style.width=pct+'%';
+  $('#year-sub').textContent=y+' 年已過 '+passed+' 天，還剩 '+(total-passed)+' 天';
+}
+
+/* ═══ 設定面板 ═══ */
+$('#btn-settings').onclick=()=>{
+  $('#set-name').value=settings.name;
+  $('#set-city').value=settings.city;
+  $('#set-hour').value=settings.hour;
+  $('#set-budget').value=settings.budget||'';
+  const tl=$('#module-toggles');tl.innerHTML='';
+  for(const k in MODULE_NAMES){
+    const row=document.createElement('div');row.className='toggle-row';
+    row.innerHTML=`<span>${MODULE_NAMES[k]}</span><button type="button" class="switch${settings.modules[k]?' on':''}" data-k="${k}"></button>`;
+    row.querySelector('.switch').onclick=e=>e.target.classList.toggle('on');
+    tl.appendChild(row);
+  }
+  $('#ov-settings').classList.add('show');
+};
+$('#set-cancel').onclick=()=>$('#ov-settings').classList.remove('show');
+$('#set-save').onclick=()=>{
+  const oldCity=settings.city;
+  settings.name=$('#set-name').value.trim();
+  settings.city=$('#set-city').value.trim()||'Taipei';
+  settings.hour=$('#set-hour').value;
+  settings.budget=parseFloat($('#set-budget').value)||0;
+  document.querySelectorAll('#module-toggles .switch').forEach(sw=>{
+    settings.modules[sw.dataset.k]=sw.classList.contains('on')?1:0;
+  });
+  saveSettings();applyModules();renderGreeting();renderExpense();tickClock();
+  if(settings.city!==oldCity)loadWeather();
+  $('#ov-settings').classList.remove('show');toast('設定已儲存 ✓');
+};
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('show')});
+});
+
+/* ═══ 匯出 / 匯入 ═══ */
+const DATA_KEYS=['settings','todos','habits','events','expenses','moods','notes','countdowns'];
+$('#btn-export').onclick=()=>{
+  const data={};DATA_KEYS.forEach(k=>data[k]=store.get(k,null));
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='lifedash-backup-'+todayKey()+'.json';
+  a.click();URL.revokeObjectURL(a.href);toast('已匯出備份 ✓');
+};
+$('#btn-import').onclick=()=>$('#import-file').click();
+$('#import-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const data=JSON.parse(rd.result);
+      DATA_KEYS.forEach(k=>{if(data[k]!=null)store.set(k,data[k])});
+      toast('匯入成功，重新載入中…');
+      setTimeout(()=>location.reload(),800);
+    }catch(err){toast('匯入失敗：檔案格式錯誤')}
+  };
+  rd.readAsText(f);e.target.value='';
+};
+
+/* ═══ 初始化 ═══ */
+function renderAll(){
+  renderGreeting();renderTodos();renderHabits();renderCalendar();
+  renderExpense();renderMood();renderNotes();renderCountdowns();renderYear();
+}
+(function init(){
+  if(!settings.name){
+    const n=prompt('歡迎使用生活儀表板！怎麼稱呼你？');
+    if(n){settings.name=n.trim().slice(0,20);saveSettings()}
+  }
+  applyTheme();applyModules();cleanupTodos();
+  tickClock();renderAll();loadWeather();
+})();
+</script>
+</body>
+</html>
