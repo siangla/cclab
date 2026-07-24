@@ -417,47 +417,47 @@
   </div>
   <div class="portfolio-grid fade-up">
 
-    <a href="https://siangla.github.io/cclab/budget-tracker.html" class="portfolio-item">
+    <a href="https://siangla.github.io/cclab/GDM/docs/index.html" class="portfolio-item">
       <div class="portfolio-num">01</div>
-      <div class="portfolio-title">預算追蹤系統</div>
+      <div class="portfolio-title">GDM 預測模型</div>
       <p class="portfolio-desc">
-        模擬企業財務管理情境，建立互動式預算追蹤介面。支援收支分類、圖表視覺化與月度彙整，展示前端開發與數據呈現能力。
+        源自碩士論文《利用機器學習以開放資料為基礎之妊娠糖尿病預測》，以倫敦西北部醫院之開放資料，透過 PyCaret 訓練基礎與集成模型預測 GDM 風險，最佳模型準確率達 0.98、AUC 0.97。因瀏覽器展示限制改為靜態版，由 JavaScript 於前端即時推論 XGBoost 模型，輸入孕婦基本資料與臨床數值即可推估風險機率。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">HTML · JS · Chart.js</span>
+        <span class="portfolio-tech">PyCaret · XGBoost · JS 端推論</span>
         <span class="portfolio-arrow">↗</span>
       </div>
     </a>
 
-    <a href="https://siangla.github.io/cclab/GDM/docs/index.html" class="portfolio-item">
+    <a href="https://order-3ngh.onrender.com/" class="portfolio-item">
       <div class="portfolio-num">02</div>
-      <div class="portfolio-title">GDM 預測模型展示</div>
+      <div class="portfolio-title">訂餐平台</div>
       <p class="portfolio-desc">
-        以碩士論文為基礎，展示以 PyCaret 建構機器學習分類模型的完整流程，從資料前處理到模型評估。
+        全端線上訂餐平台，後端以 FastAPI 建構 API，前端以 Alpine.js + Tailwind CSS 打造。透過 Firebase Auth 支援 Google / Facebook 快速登入，資料與圖片存於 Firestore 與 Firebase Storage，提供店家瀏覽、搜尋與下單流程，部署於 Render。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">HTML · JS · XGBoost · PyCaret </span>
+        <span class="portfolio-tech">FastAPI · Firebase · Alpine.js · Tailwind</span>
         <span class="portfolio-arrow">↗</span>
       </div>
     </a>
-    
-    <div class="portfolio-item portfolio-coming">
+
+    <a href="https://siangla.github.io/cclab/EatWhat/eatwhat.html" class="portfolio-item">
       <div class="portfolio-num">03</div>
-      <div class="portfolio-title">資料視覺化分析</div>
+      <div class="portfolio-title">今天吃什麼</div>
       <p class="portfolio-desc">
-        運用 Python / Tableau 進行資料清理與分析視覺化，展示數據分析師技能與商業洞察表達能力。
+        解決每日選餐困擾的小工具。以純 JavaScript 手刻月曆記錄三餐、花費與運動日並自動統計，支援隨機選餐與 Excel 匯出／匯入，透過 Google OAuth 2.0 登入並以 Google Sheets API 讀寫資料，搭配 localStorage 本機快取加速。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">即將推出</span>
-        <span class="portfolio-arrow">·</span>
+        <span class="portfolio-tech">JavaScript · Google Sheets API · OAuth 2.0</span>
+        <span class="portfolio-arrow">↗</span>
       </div>
-    </div>
+    </a>
 
     <div class="portfolio-item portfolio-coming">
       <div class="portfolio-num">04</div>
-      <div class="portfolio-title">ERP 需求分析儀表板</div>
+      <div class="portfolio-title">營運數據分析儀表板</div>
       <p class="portfolio-desc">
-        展示 ERP 系統需求收集與流程分析的工作成果，包含流程圖設計與使用者故事文件範例。
+        以訂餐平台累積的訂單資料為基礎，運用 Python 進行資料清理與分析，建置互動式營運儀表板，呈現銷售趨勢、熱門品項與商業洞察。
       </p>
       <div class="portfolio-footer">
         <span class="portfolio-tech">即將推出</span>
