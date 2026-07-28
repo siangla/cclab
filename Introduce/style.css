@@ -909,7 +909,7 @@ footer {
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   nav { padding: 0 24px; }
-  .nav-links { gap: 20px; }
+  .nav-links { gap: 10px; }
 
   .hero { grid-template-columns: 1fr; }
   .hero-left { border-right: none; border-bottom: 1px solid var(--ink); }
