@@ -328,12 +328,11 @@ section {
 
 .about-grid {
   display: grid;
-  grid-template-columns: 5fr 4fr;
-  gap: 80px;
-  align-items: start;
+  grid-template-columns: 1fr;
 }
 
 .about-quote {
+  max-width: 750px;
   font-family: var(--serif);
   font-size: 15px;
   line-height: 1.9;
@@ -347,52 +346,6 @@ section {
   font-weight: 700;
   color: var(--accent);
   font-style: normal;
-}
-
-.info-card {
-  border: 1px solid var(--ink);
-  overflow: hidden;
-}
-
-.info-card-header {
-  background: var(--ink);
-  color: var(--paper);
-  padding: 16px 24px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.info-row {
-  display: flex;
-  border-bottom: 1px solid var(--ink);
-  opacity: 0.9;
-}
-
-.info-row:last-child { border-bottom: none; }
-
-.info-key {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink);
-  opacity: 0.5;
-  padding: 14px 20px;
-  min-width: 110px;
-  border-right: 1px solid var(--ink);
-  display: flex;
-  align-items: center;
-}
-
-.info-val {
-  font-family: var(--sans);
-  font-size: 13px;
-  padding: 14px 20px;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
 }
 
 /* ── EXPERIENCE ── */
@@ -549,7 +502,16 @@ section {
   font-size: 20px;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+}
+
+.proj-company {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  opacity: 0.5;
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
 }
 
 .proj-desc {
@@ -871,8 +833,8 @@ section {
   font-family: var(--sans);
   font-size: 14px;
   line-height: 1.8;
-  color: var(--paper);
-  opacity: 0.5;
+  color: var(--paper) ;
+  opacity: 0.7;
 }
 
 .contact-right {
@@ -895,9 +857,10 @@ section {
 .contact-icon {
   font-family: var(--mono);
   font-size: 10px;
+  font-weight: bold;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: #f07062 ;
   min-width: 56px;
   padding-top: 2px;
 }
@@ -928,7 +891,7 @@ footer {
   font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--paper);
-  opacity: 0.3;
+  opacity: 0.5;
 }
 
 /* ── ANIMATIONS ── */
