@@ -412,7 +412,7 @@ section {
   transition: background 0.2s;
 }
 
-.exp-item:hover { background: #fff; }
+.exp-item:hover { background: #f7f6f2; }
 
 .exp-time {
   padding: 32px 24px;
@@ -498,10 +498,92 @@ section {
   opacity: 0.5;
 }
 
+/* ── PROJECTS ── */
+#projects {
+  padding: 96px 48px;
+  border-bottom: 1px solid var(--ink);
+}
+
+#projects .section-header { margin-bottom: 18px; }
+
+.proj-intro {
+  max-width: 560px;
+  margin: 0 0 36px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink);
+  opacity: 0.65;
+}
+
+.proj-list {
+  border: 1px solid var(--ink);
+  background: var(--paper2);
+}
+
+.proj-item {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  border-bottom: 1px solid var(--ink);
+  transition: background 0.2s;
+}
+
+.proj-item:last-child { border-bottom: none; }
+.proj-item:hover { background: #f7f6f2 ; }
+
+.proj-num {
+  padding: 32px 24px;
+  border-right: 1px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--ink);
+  opacity: 0.15;
+  line-height: 1;
+}
+
+.proj-body { padding: 32px 36px; }
+
+.proj-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.proj-desc {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink);
+  opacity: 0.7;
+  max-width: 720px;
+  margin-bottom: 16px;
+}
+
+.proj-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* ── SKILLS ── */
 #skills {
   padding: 96px 48px;
   border-bottom: 1px solid var(--ink);
+}
+
+#skills .section-header { margin-bottom: 18px; }
+
+.skills-intro {
+  max-width: 560px;
+  margin: 0 0 36px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink);
+  opacity: 0.65;
 }
 
 .skills-grid {
@@ -542,38 +624,27 @@ section {
 
 .skill-items {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.skill-row {
-  display: flex;
+.skill-tag {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.skill-name {
-  font-family: var(--sans);
-  font-size: 14px;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid rgba(26, 25, 23, 0.25);
+  background: rgba(255, 255, 255, 0.35);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
   color: var(--ink);
-  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-.skill-bar-bg {
-  flex: 1;
-  height: 3px;
-  background: var(--ink);
-  opacity: 0.12;
-  position: relative;
-}
-
-.skill-bar-fill {
-  position: absolute;
-  top: 0; left: 0;
-  height: 100%;
-  background: var(--ink);
-  opacity: 0.6;
+.skill-tag:hover {
+  border-color: var(--accent);
+  background: rgba(216, 63, 32, 0.08);
 }
 
 /* ── EDUCATION ── */
@@ -880,22 +951,35 @@ footer {
   .hero { grid-template-columns: 1fr; }
   .hero-left { border-right: none; border-bottom: 1px solid var(--ink); }
 
-  #about, #experience, #skills, #education, #portfolio, #contact { padding: 64px 24px; }
+  #about, #experience, #projects, #skills, #education, #portfolio, #contact { padding: 64px 24px; }
 
   .about-grid { grid-template-columns: 1fr; gap: 40px; }
 
   .exp-item { grid-template-columns: 1fr; }
   .exp-time { border-right: none; border-bottom: 1px solid var(--ink); }
 
+  .proj-item { grid-template-columns: 1fr; }
+  .proj-num { border-right: none; border-bottom: 1px solid var(--ink); }
+
   .skills-grid { grid-template-columns: 1fr 1fr; }
   .skill-category:nth-child(2n)       { border-right: none; }
-  .skill-category:nth-child(3n)       { border-right: 1px solid var(--ink); }
+  .skill-category:nth-child(3n):not(:nth-child(2n)) { border-right: 1px solid var(--ink); }
+  .skill-category:nth-last-child(-n+3) { border-bottom: 1px solid var(--ink); }
+  .skill-category:nth-last-child(-n+2) { border-bottom: none; }
 
   .edu-grid { grid-template-columns: 1fr; }
   .edu-item { border-right: none; border-bottom: 1px solid var(--ink); }
 
   .portfolio-grid { grid-template-columns: 1fr; }
   .portfolio-item { border-right: none; }
+
+  .portfolio-item:nth-last-child(-n+2) {
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .portfolio-item:last-child {
+    border-bottom: none;
+  }
 
   .contact-grid { grid-template-columns: 1fr; }
   .contact-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.12); }

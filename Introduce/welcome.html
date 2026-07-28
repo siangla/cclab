@@ -8,21 +8,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="top">
 
 <!-- NAV -->
-<nav>
-  <a href="#" class="nav-logo">Bella_Chen.</a>
+<header class="site-header">
+<nav aria-label="主要導覽">
+  <a href="#top" class="nav-logo" aria-label="回到頁面頂端">Bella_Chen.</a>
   <ul class="nav-links">
     <li><a href="#about">關於</a></li>
     <li><a href="#experience">經歷</a></li>
+    <li><a href="#projects">專案</a></li>
     <li><a href="#skills">技術</a></li>
     <li><a href="#education">學歷</a></li>
     <li><a href="#portfolio">作品集</a></li>
     <li><a href="#contact">聯絡</a></li>
   </ul>
 </nav>
+</header>
 
+<main>
 <!-- HERO -->
 <section class="hero">
   <div class="hero-left">
@@ -31,7 +35,7 @@
     <div class="hero-name-en">Bella Chen</div>
     <p class="hero-title">
       在實務中學習，在開發中成長。<br>
-      具備 ERP 系統開發與需求處理經驗，致力以技術解決企業流程痛點。
+      具備 ERP 系統開發與需求處理經驗，持續透過實務與進修累積專業能力。
     </p>
     <div class="hero-cta">
       <a href="#portfolio" class="btn-primary">查看作品集 →</a>
@@ -128,10 +132,9 @@
   </div>
   <div class="about-grid fade-up">
     <div class="about-quote">
-      <p>出生高雄，在父母的民主教育下成長，培養出<strong>獨立自主、積極樂觀</strong>的性格。</p>
-      <p>實踐大學資管系就讀期間，參與 ERP 培訓計畫並獲推薦至西北食品實習，體會到正面態度是完成任務的關鍵。進入職場後不停歇，考取東海大學資工所在職專班，以「機器學習預測妊娠糖尿病」為論文主題，運用 PyCaret 建構預測模型。</p>
-      <p>現任職順捷股份有限公司，擔任 <strong>Oracle JDE ERP 系統副工程師</strong>，主負責銷售、採購及生產模組，從需求訪談到程式規劃、開發及測試，全程獨立完成。期間參與 LRP 升級專案，並獲派前往<strong>葡萄牙廠</strong>執行系統導入評估。</p>
-      <p>持續追蹤科技趨勢，參加勞工局 C++ 與前端課程及 104 AI 職場力課程，不斷豐富技術廣度。</p>
+      <p>目前任職於<strong>順捷股份有限公司</strong>，擔任<strong> Oracle JDE ERP 系統副工程師</strong>，主要負責銷售、採購及生產模組的需求處理與程式開發。可獨立進行需求分析、程式規劃、開發與測試，並依公司流程與主管確認執行方向。</p>
+      <p>先後於食品、電子製造與自行車代工產業累積 ERP 維運與開發經驗，工作內容涵蓋使用者問題處理、報表需求、資料同步與系統串接等。曾參與<strong>葡萄牙廠 LRP 系統升級專案</strong>，配合升級需求進行程式開發與調整，並兩度赴廠支援導入評估及使用者教育訓練。</p>
+      <p>透過在職進修與實務學習累積能力，完成東海大學資訊工程碩士學位，並持續接觸網頁開發與 AI 協作工具，期望在企業系統與流程改善的實務中持續成長。</p>
     </div>
     <div class="info-card">
       <div class="info-card-header">個人資料 / Personal Info</div>
@@ -140,28 +143,16 @@
         <span class="info-val">陳友婷 Bella Chen</span>
       </div>
       <div class="info-row">
-        <span class="info-key">年齡</span>
-        <span class="info-val">29 歲</span>
-      </div>
-      <div class="info-row">
         <span class="info-key">地點</span>
-        <span class="info-val">台中市太平區</span>
+        <span class="info-val">台中市</span>
       </div>
       <div class="info-row">
         <span class="info-key">現況</span>
         <span class="info-val">在職中</span>
       </div>
       <div class="info-row">
-        <span class="info-key">希望</span>
-        <span class="info-val">全職 ／ 日班</span>
-      </div>
-      <div class="info-row">
         <span class="info-key">遠端</span>
         <span class="info-val">有意願</span>
-      </div>
-      <div class="info-row">
-        <span class="info-key">待遇</span>
-        <span class="info-val">面議</span>
       </div>
     </div>
   </div>
@@ -179,7 +170,7 @@
     <div class="exp-item fade-up">
       <div class="exp-time">
         <span class="exp-period">2021/04<br>至今</span>
-        <span class="exp-duration">現職 · 4年+</span>
+        <span class="exp-duration">現職 · 5年+</span>
       </div>
       <div class="exp-body">
         <div class="exp-title">副工程師</div>
@@ -251,124 +242,147 @@
   </div>
 </section>
 
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-header fade-up">
+    <span class="section-number">03 — Projects</span>
+    <h2 class="section-title">重點專案</h2>
+    <div class="section-line"></div>
+  </div>
+  <p class="proj-intro fade-up">於各司任職期間主導或參與之 ERP 相關專案與技術案例。</p>
+  <div class="proj-list">
+
+    <div class="proj-item fade-up">
+      <div class="proj-num">01</div>
+      <div class="proj-body">
+        <div class="proj-title">LRP 升級</div>
+        <p class="proj-desc">利用 JDE 套裝工具整改原有 LRP 程式，簡化使用者操作流程、優化系統效能並降低庫存。系統穩定後，前往葡萄牙廠進行系統導入評估與執行。</p>
+        <div class="proj-tags">
+          <span class="tag">JDE 套裝工具</span>
+          <span class="tag">流程優化</span>
+          <span class="tag">海外導入</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-item fade-up">
+      <div class="proj-num">02</div>
+      <div class="proj-body">
+        <div class="proj-title">資料串接案例</div>
+        <p class="proj-desc">以 Groovy 開發 API，完成與網頁系統串接，使客戶能在 SCM 平台即時查看訂單資訊；並與客戶資料串接，實現採購單轉銷售單及訂單變更資訊自動接收。</p>
+        <div class="proj-tags">
+          <span class="tag">Groovy</span>
+          <span class="tag">API</span>
+          <span class="tag">SCM 串接</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-item fade-up">
+      <div class="proj-num">03</div>
+      <div class="proj-body">
+        <div class="proj-title">Stored Procedure 案例</div>
+        <p class="proj-desc">處理廠區間相關資料同步、請購單結轉採購單，以及逾期資料的資料庫轉移作業。</p>
+        <div class="proj-tags">
+          <span class="tag">Stored Procedure</span>
+          <span class="tag">資料同步</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-item fade-up">
+      <div class="proj-num">04</div>
+      <div class="proj-body">
+        <div class="proj-title">標籤機結合 ERP</div>
+        <p class="proj-desc">使用 VB6 進行程式開發，透過掃碼機掃描條碼對應標籤設定檔，列印出相應格式的側嘜標籤。</p>
+        <div class="proj-tags">
+          <span class="tag">VB6</span>
+          <span class="tag">硬體整合</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="proj-item fade-up">
+      <div class="proj-num">05</div>
+      <div class="proj-body">
+        <div class="proj-title">關係企業 ERP 合併</div>
+        <p class="proj-desc">協調並整理資料供各相關單位審查，開發 VBA 匯入資料，並建立 SQL Trigger 進行即時資料同步維護，確保資料一致性。</p>
+        <div class="proj-tags">
+          <span class="tag">VBA</span>
+          <span class="tag">SQL Trigger</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- SKILLS -->
 <section id="skills">
   <div class="section-header fade-up">
-    <span class="section-number">03 — Skills</span>
-    <h2 class="section-title">技術專長</h2>
+    <span class="section-number">04 — Skills</span>
+    <h2 class="section-title">技術工具箱</h2>
     <div class="section-line"></div>
   </div>
+  <p class="skills-intro fade-up">以下為工作、學習與專案中使用或接觸過的技術與工具。</p>
   <div class="skills-grid fade-up">
 
     <div class="skill-category">
-      <div class="skill-cat-label">ERP & 系統</div>
+      <h3 class="skill-cat-label">企業系統</h3>
       <div class="skill-items">
-        <div class="skill-row">
-          <span class="skill-name">Oracle JDE</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:95%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">MF2000 ERP</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:70%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Agentflow BPM</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:65%"></div></div>
-        </div>
+        <span class="skill-tag">Oracle JDE</span>
+        <span class="skill-tag">MF2000 ERP</span>
+        <span class="skill-tag">Agentflow BPM</span>
+        <span class="skill-tag">IEERP</span>
       </div>
     </div>
 
     <div class="skill-category">
-      <div class="skill-cat-label">程式語言</div>
+      <h3 class="skill-cat-label">程式開發</h3>
       <div class="skill-items">
-        <div class="skill-row">
-          <span class="skill-name">Java</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Groovy</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:80%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Python</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:70%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">VB6 / VBA</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%"></div></div>
-        </div>
+        <span class="skill-tag">Java</span>
+        <span class="skill-tag">Groovy</span>
+        <span class="skill-tag">Python</span>
+        <span class="skill-tag">VB6 / VBA</span>
       </div>
     </div>
 
     <div class="skill-category">
-      <div class="skill-cat-label">資料庫</div>
+      <h3 class="skill-cat-label">網頁與整合</h3>
       <div class="skill-items">
-        <div class="skill-row">
-          <span class="skill-name">Oracle</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:90%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">MSSQL</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:80%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">MySQL</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%"></div></div>
-        </div>
+        <span class="skill-tag">HTML / CSS</span>
+        <span class="skill-tag">JavaScript</span>
+        <span class="skill-tag">Firebase</span>
+        <span class="skill-tag">Render</span>
       </div>
     </div>
 
     <div class="skill-category">
-      <div class="skill-cat-label">數據分析</div>
+      <h3 class="skill-cat-label">資料庫與 SQL</h3>
       <div class="skill-items">
-        <div class="skill-row">
-          <span class="skill-name">Tableau</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:80%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">PowerBI</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:65%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">PyCaret / ML</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:60%"></div></div>
-        </div>
+        <span class="skill-tag">Oracle Database</span>
+        <span class="skill-tag">SQL Server</span>
+        <span class="skill-tag">MySQL</span>
+        <span class="skill-tag">Trigger</span>
+        <span class="skill-tag">Stored Procedure</span>
       </div>
     </div>
 
     <div class="skill-category">
-      <div class="skill-cat-label">前端 & 工具</div>
+      <h3 class="skill-cat-label">資料分析與報表</h3>
       <div class="skill-items">
-        <div class="skill-row">
-          <span class="skill-name">HTML / CSS</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:60%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Excel / VBA</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Crystal Report</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%"></div></div>
-        </div>
+        <span class="skill-tag">Tableau</span>
+        <span class="skill-tag">Power BI</span>
+        <span class="skill-tag">Excel</span>
+        <span class="skill-tag">PyCaret</span>
       </div>
     </div>
 
     <div class="skill-category">
-      <div class="skill-cat-label">設計 & 其他</div>
+      <h3 class="skill-cat-label">系統支援</h3>
       <div class="skill-items">
-        <div class="skill-row">
-          <span class="skill-name">Adobe Photoshop</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:65%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Illustrator</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:55%"></div></div>
-        </div>
-        <div class="skill-row">
-          <span class="skill-name">Windows Server</span>
-          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:60%"></div></div>
-        </div>
+        <span class="skill-tag">Crystal Reports</span>
+        <span class="skill-tag">Windows Server</span>
       </div>
     </div>
 
@@ -378,7 +392,7 @@
 <!-- EDUCATION -->
 <section id="education">
   <div class="section-header fade-up">
-    <span class="section-number">04 — Education</span>
+    <span class="section-number">05 — Education</span>
     <h2 class="section-title">學歷</h2>
     <div class="section-line"></div>
   </div>
@@ -411,59 +425,59 @@
 <!-- PORTFOLIO -->
 <section id="portfolio">
   <div class="section-header fade-up">
-    <span class="section-number">05 — Portfolio</span>
+    <span class="section-number">06 — Portfolio</span>
     <h2 class="section-title">作品集</h2>
     <div class="section-line"></div>
   </div>
   <div class="portfolio-grid fade-up">
 
-    <a href="https://siangla.github.io/cclab/GDM/docs/index.html" class="portfolio-item">
+    <a href="https://siangla.github.io/cclab/GDM/docs/index.html" class="portfolio-item" target="_blank" rel="noopener noreferrer" aria-label="Open GDM prediction model in a new tab">
       <div class="portfolio-num">01</div>
       <div class="portfolio-title">GDM 預測模型</div>
       <p class="portfolio-desc">
-        源自碩士論文《利用機器學習以開放資料為基礎之妊娠糖尿病預測》，以倫敦西北部醫院之開放資料，透過 PyCaret 訓練基礎與集成模型預測 GDM 風險，最佳模型準確率達 0.98、AUC 0.97。因瀏覽器展示限制改為靜態版，由 JavaScript 於前端即時推論 XGBoost 模型，輸入孕婦基本資料與臨床數值即可推估風險機率。
+        將碩士論文中的妊娠糖尿病風險預測概念，整理為可直接操作的網頁工具。使用者可輸入基本資料與臨床數值，即時查看風險推估結果。我負責規劃輸入欄位、結果呈現與使用流程，並以 AI 協助完成前端展示與互動介面調整。本工具僅供研究與展示，非醫療診斷用途。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">PyCaret · XGBoost · JS 端推論</span>
+        <span class="portfolio-tech">AI 協作 · 前端展示 · XGBoost · 互動式網頁</span>
         <span class="portfolio-arrow">↗</span>
       </div>
     </a>
 
-    <a href="https://order-3ngh.onrender.com/" class="portfolio-item">
+    <a href="https://order-3ngh.onrender.com/" class="portfolio-item" target="_blank" rel="noopener noreferrer" aria-label="Open ordering platform in a new tab">
       <div class="portfolio-num">02</div>
       <div class="portfolio-title">訂餐平台</div>
       <p class="portfolio-desc">
-        全端線上訂餐平台，後端以 FastAPI 建構 API，前端以 Alpine.js + Tailwind CSS 打造。透過 Firebase Auth 支援 Google / Facebook 快速登入，資料與圖片存於 Firestore 與 Firebase Storage，提供店家瀏覽、搜尋與下單流程，部署於 Render。
+        涵蓋店家瀏覽、關鍵字搜尋、Google 登入與下單流程的訂餐網站。資料透過 Firebase 管理，並部署為可實際操作的網站。我負責梳理使用情境、功能流程與測試，使用 AI 協助完成前後端串接與功能調整。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">FastAPI · Firebase · Alpine.js · Tailwind</span>
+        <span class="portfolio-tech">AI 協作 · Firebase · Google 登入 · Render 部署</span>
         <span class="portfolio-arrow">↗</span>
       </div>
     </a>
 
-    <a href="https://siangla.github.io/cclab/EatWhat/eatwhat.html" class="portfolio-item">
+    <a href="https://siangla.github.io/cclab/EatWhat/eatwhat.html" class="portfolio-item" target="_blank" rel="noopener noreferrer" aria-label="Open meal planner in a new tab">
       <div class="portfolio-num">03</div>
       <div class="portfolio-title">今天吃什麼</div>
       <p class="portfolio-desc">
-        解決每日選餐困擾的小工具。以純 JavaScript 手刻月曆記錄三餐、花費與運動日並自動統計，支援隨機選餐與 Excel 匯出／匯入，透過 Google OAuth 2.0 登入並以 Google Sheets API 讀寫資料，搭配 localStorage 本機快取加速。
+        協助記錄每日飲食、花費與運動的小工具，提供月曆檢視、隨機選餐、統計與 Excel 匯入／匯出等功能。網站支援 Firebase 的 Realtime Database 資料同步，以便多人共用維護，也保留本機快取來提升使用便利性。我規劃記錄欄位與操作方式，並以 AI 協助完成介面與功能實作。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">JavaScript · Google Sheets API · OAuth 2.0</span>
+        <span class="portfolio-tech">AI 協作 · JavaScript · Firebase Realtime DB · Excel 匯入／匯出</span>
         <span class="portfolio-arrow">↗</span>
       </div>
     </a>
 
-    <div class="portfolio-item portfolio-coming">
+    <a href="https://portaly.cc/cclab" class="portfolio-item" target="_blank" rel="noopener noreferrer" aria-label="Open AI tools in a new tab">
       <div class="portfolio-num">04</div>
-      <div class="portfolio-title">營運數據分析儀表板</div>
+      <div class="portfolio-title">其他小工具</div>
       <p class="portfolio-desc">
-        以訂餐平台累積的訂單資料為基礎，運用 Python 進行資料清理與分析，建置互動式營運儀表板，呈現銷售趨勢、熱門品項與商業洞察。
+        集合以 AI 協作開發的實用小工具與實驗作品，持續嘗試把生活或工作中的需求快速轉化為可操作的網頁。每個作品都由我先定義問題、功能範圍與操作流程，再透過測試與迭代調整成果。
       </p>
       <div class="portfolio-footer">
-        <span class="portfolio-tech">即將推出</span>
-        <span class="portfolio-arrow">·</span>
+        <span class="portfolio-tech">AI 協作 · 需求規劃 · 功能測試 · 持續迭代</span>
+        <span class="portfolio-arrow">↗</span>
       </div>
-    </div>
+    </a>
 
   </div>
 </section>
@@ -471,7 +485,7 @@
 <!-- CONTACT -->
 <section id="contact">
   <div class="section-header fade-up">
-    <span class="section-number">06 — Contact</span>
+    <span class="section-number">07 — Contact</span>
     <h2 class="section-title">聯絡我</h2>
     <div class="section-line"></div>
   </div>
@@ -481,23 +495,19 @@
         期望加入一個<em>具完善制度</em>與<em>專業知識</em>的企業，持續成長。
       </div>
       <p class="contact-note">
-        目前在職中，歡迎各方洽談機會。<br>
-        希望地點：台中市北屯區、太平區、北區、東區、大里區、西區。<br><br>
-        對遠端工作亦有意願。錄取後一個月可上班。
+        目前在職中，歡迎洽談合適機會。<br>
+        所在地：台中市，亦可配合遠端工作。<br><br>
+        錄取後一個月可上班。
       </p>
     </div>
     <div class="contact-right">
       <div class="contact-item">
         <span class="contact-icon">Tel</span>
-        <span class="contact-val">0956-358-985</span>
+        <a class="contact-val" href="tel:+886956358985">0956-358-985</a>
       </div>
       <div class="contact-item">
         <span class="contact-icon">Email</span>
-        <span class="contact-val">coco850919@yahoo.com.tw</span>
-      </div>
-      <div class="contact-item">
-        <span class="contact-icon">地址</span>
-        <span class="contact-val">台中市太平區</span>
+        <a class="contact-val" href="mailto:coco850919@yahoo.com.tw">coco850919@yahoo.com.tw</a>
       </div>
       <div class="contact-item">
         <span class="contact-icon">駕照</span>
@@ -507,9 +517,11 @@
   </div>
 </section>
 
+</main>
+
 <!-- FOOTER -->
 <footer>
-  <div class="footer-left">© 2025 陳友婷 Bella Chen · ERP Engineer</div>
+  <div class="footer-left">© 2026 陳友婷 Bella Chen · ERP Engineer</div>
   <div class="footer-right">在實務中學習，在開發中成長</div>
 </footer>
 
