@@ -332,7 +332,7 @@ section {
 }
 
 .about-quote {
-  max-width: 750px;
+  max-width: 75%;
   font-family: var(--serif);
   font-size: 15px;
   line-height: 1.9;
