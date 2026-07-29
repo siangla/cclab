@@ -141,11 +141,11 @@ nav {
 
 .hero-title {
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: clamp(14px, 1.2vw, 18px);
   color: var(--ink);
   opacity: 0.7;
   line-height: 1.6;
-  max-width: 400px;
+  width: 80%;
   margin-bottom: 48px;
 }
 
@@ -332,7 +332,7 @@ section {
 }
 
 .about-quote {
-  max-width: 1000px;
+  width: 80%;
   font-family: var(--serif);
   font-size: 15px;
   line-height: 1.9;
@@ -913,10 +913,12 @@ footer {
 
   .hero { grid-template-columns: 1fr; }
   .hero-left { border-right: none; border-bottom: 1px solid var(--ink); }
+  .hero-title { width: 100%; }
 
   #about, #experience, #projects, #skills, #education, #portfolio, #contact { padding: 64px 24px; }
 
   .about-grid { grid-template-columns: 1fr; gap: 40px; }
+  .about-quote { width: 100%; margin: 0; }
 
   .exp-item { grid-template-columns: 1fr; }
   .exp-time { border-right: none; border-bottom: 1px solid var(--ink); }
