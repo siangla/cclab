@@ -80,10 +80,22 @@ tr:hover .rowdel,.item:hover .rowdel{opacity:1}
 @media(max-width:700px){.item .drag{opacity:.6;font-size:16px}}
 .item:hover .drag{opacity:1}
 .item.dragging{opacity:.35}
+body.drag-active,body.drag-active *{cursor:grabbing!important}
 .item.transit{background:var(--tbg);border-left:3px solid var(--acc2)}
 .item.note{background:var(--nbg);border-left:3px solid #f0b429}
 .item .sub{display:flex;gap:6px;margin-top:2px;flex-wrap:wrap}
 .item .sub input{font-size:12px;color:var(--sub)}
+.item .link-field{flex:0 0 220px;width:220px;min-width:220px}
+.item .transit-fields{align-items:center;flex-wrap:nowrap}
+.item .transit-fields .route-field{flex:1 1 240px;min-width:160px}
+.item .transit-fields .transit-metric{flex:0 0 110px;width:110px;min-width:110px}
+.item .transit-total{height:27px;display:flex;align-items:center;justify-content:flex-end;
+  color:var(--acc2);font-weight:600;white-space:nowrap;padding:3px 5px}
+.item .transit-total.empty{color:var(--sub);font-weight:400}
+@media(max-width:700px){
+  .item .transit-fields{flex-wrap:wrap}
+  .item .link-field{flex-basis:220px}
+}
 .pkcat{margin-bottom:14px}
 .pkcat h4{margin:4px 0;color:var(--acc2)}
 .pkrow{display:flex;align-items:center;gap:8px;padding:2px 4px;border-radius:6px}
@@ -416,8 +428,16 @@ function drawPie(cv,lg,data){
 }
 
 /* ============ ③ 每日行程 ============ */
-const MODES=['地鐵','JR','新幹線','巴士','計程車','飛機','船','步行','其他'];
-const MODE_IC={地鐵:'🚇',JR:'🚃',新幹線:'🚄',巴士:'🚌',計程車:'🚕',飛機:'✈️',船:'⛴',步行:'🚶',其他:'🚏'};
+const MODES=['地鐵','JR','新幹線','巴士','計程車','汽車','機車','腳踏車','飛機','船','步行','其他'];
+const MODE_IC={地鐵:'🚇',JR:'🚃',新幹線:'🚄',巴士:'🚌',計程車:'🚕',汽車:'🚗',機車:'🛵',腳踏車:'🚲',飛機:'✈️',船:'⛴',步行:'🚶',其他:'🚏'};
+function durationBetween(t1,t2){
+  if(!t1||!t2)return'';
+  const [h1,m1]=t1.split(':').map(Number),[h2,m2]=t2.split(':').map(Number);
+  if([h1,m1,h2,m2].some(Number.isNaN))return'';
+  let mins=h2*60+m2-(h1*60+m1);if(mins<0)mins+=1440;
+  const h=Math.floor(mins/60),m=mins%60;
+  return h&&m?`${h} 小時 ${m} 分`:h?`${h} 小時`:`${m} 分`;
+}
 // 拖曳插入位置計算（以整張卡片為放置區）
 function rowsOf(card){return[...card.querySelectorAll('.item[data-idx]')]}
 function insertIndex(card,y){
@@ -456,7 +476,7 @@ function renderDays(body,t){
   if(!t.days.length){body.appendChild(el('div','card muted','尚無行程日，點「＋ 新增日」開始。'));return}
   if(curDay>=t.days.length)curDay=0;
   const d=t.days[curDay];
-  const card=el('div','card');
+  const card=el('div','card itinerary-card');
   const hd=el('div','toolrow');
   hd.innerHTML=`<input type="date" style="width:140px" value="${d.date||''}" onchange="trip().days[curDay].date=this.value;save();rerender()">
     <input style="width:200px;font-weight:700" placeholder="標題（如：往福岡）" value="${esc(d.title||'')}" onchange="trip().days[curDay].title=this.value;save()">
@@ -465,19 +485,11 @@ function renderDays(body,t){
     <button class="btn sm danger" onclick="delDay()">刪除此日</button>`;
   card.appendChild(hd);
   d.items.forEach((it,i)=>card.appendChild(itemRow(t,d,it,i)));
-  // 整張卡片都可放置，不必瞄準特定列
-  card.ondragover=e=>{if(dragIdx==null)return;e.preventDefault();
-    e.dataTransfer.dropEffect='move';markInsert(card,e.clientY)};
-  card.ondragleave=e=>{if(!card.contains(e.relatedTarget))clearInsert(card)};
-  card.ondrop=e=>{if(dragIdx==null)return;e.preventDefault();
-    let to=insertIndex(card,e.clientY);clearInsert(card);
-    const[m]=d.items.splice(dragIdx,1);if(dragIdx<to)to--;
-    d.items.splice(to,0,m);dragIdx=null;save();rerender()};
   const ops=el('div','toolrow');ops.style.marginTop='10px';
   [['activity','＋ 活動'],['transit','＋ 交通'],['note','＋ 備註']].forEach(([tp,label])=>{
     const b=el('button','btn ghost sm',label);
     b.onclick=()=>{d.items.push(tp==='transit'?{type:tp,mode:'地鐵',route:'',dur:'',budget:0}
-      :tp==='note'?{type:tp,name:''}
+      :tp==='note'?{type:tp,name:'',link:''}
       :{type:tp,t1:'',t2:'',name:'',note:'',budget:0,link:''});save();rerender()};
     ops.appendChild(b);
   });
@@ -491,31 +503,62 @@ function delDay(){
   const t=trip();if(!confirm('刪除這一天的所有行程？'))return;
   t.days.splice(curDay,1);curDay=Math.max(0,curDay-1);save();rerender();
 }
-// 觸控拖移輔助
-let touchEl=null;
+// Pointer Events 拖移：滑鼠與觸控共用，避開原生 HTML5 拖曳的禁止游標
+let touchEl=null,pointerDrag=null;
 function touchTarget(x,y){
   const p=document.elementFromPoint(x,y);
-  return p&&p.closest('.item[data-idx],.daytabs button[data-day]');
+  return p&&p.closest('.item[data-idx],.daytabs button[data-day],.itinerary-card');
 }
 function touchMark(x,y){
   clearTouchMark();
   const tg=touchTarget(x,y);if(!tg)return;
   if(tg.dataset.day!=null)tg.style.outline='2px solid var(--acc)';
-  else{const rc=tg.getBoundingClientRect(),after=y>rc.top+rc.height/2;
+  else if(tg.classList.contains('item')){const rc=tg.getBoundingClientRect(),after=y>rc.top+rc.height/2;
     tg.style.borderTop=after?'':'2px solid var(--acc)';tg.style.borderBottom=after?'2px solid var(--acc)':''}
+  else markInsert(tg,y);
   touchEl=tg;
 }
-function clearTouchMark(){if(touchEl){touchEl.style.outline='';touchEl.style.borderTop='';touchEl.style.borderBottom='';touchEl=null}}
+function clearTouchMark(){if(touchEl){
+  touchEl.style.outline='';touchEl.style.borderTop='';touchEl.style.borderBottom='';
+  if(touchEl.classList.contains('itinerary-card'))clearInsert(touchEl);touchEl=null;
+}}
 function touchDrop(x,y,d,t){
   const tg=touchTarget(x,y);clearTouchMark();
   if(tg&&dragIdx!=null){
     if(tg.dataset.day!=null){const k=+tg.dataset.day;
       if(k!==curDay){const[m]=d.items.splice(dragIdx,1);t.days[k].items.push(m)}}
-    else{const j=+tg.dataset.idx;
-      if(j!==dragIdx){const rc=tg.getBoundingClientRect(),after=y>rc.top+rc.height/2;
-        let to=j+(after?1:0);const[m]=d.items.splice(dragIdx,1);if(dragIdx<to)to--;d.items.splice(to,0,m)}}
+    else{const card=tg.classList.contains('itinerary-card')?tg:tg.closest('.itinerary-card');
+      if(card){let to=insertIndex(card,y);const[m]=d.items.splice(dragIdx,1);
+        if(dragIdx<to)to--;d.items.splice(to,0,m)}}
   }
-  dragIdx=null;save();rerender();
+  dragIdx=null;pointerDrag=null;document.body.classList.remove('drag-active');save();rerender();
+}
+function pointerAutoScroll(y){
+  const edge=70;
+  if(y<edge)window.scrollBy(0,-Math.max(4,Math.ceil((edge-y)/5)));
+  else if(y>innerHeight-edge)window.scrollBy(0,Math.max(4,Math.ceil((y-innerHeight+edge)/5)));
+}
+function beginPointerDrag(e,row,i,d,t){
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  pointerDrag={id:e.pointerId,row,i,d,t,x:e.clientX,y:e.clientY,started:false};
+  try{e.currentTarget.setPointerCapture(e.pointerId)}catch(_){}
+}
+function movePointerDrag(e){
+  const p=pointerDrag;if(!p||p.id!==e.pointerId)return;
+  if(!p.started){if(Math.hypot(e.clientX-p.x,e.clientY-p.y)<4)return;
+    p.started=true;dragIdx=p.i;p.row.classList.add('dragging');document.body.classList.add('drag-active')}
+  e.preventDefault();pointerAutoScroll(e.clientY);touchMark(e.clientX,e.clientY);
+}
+function endPointerDrag(e){
+  const p=pointerDrag;if(!p||p.id!==e.pointerId)return;
+  if(!p.started){pointerDrag=null;return}
+  touchDrop(e.clientX,e.clientY,p.d,p.t);
+}
+function cancelPointerDrag(e){
+  if(!pointerDrag||pointerDrag.id!==e.pointerId)return;
+  clearTouchMark();pointerDrag.row.classList.remove('dragging');pointerDrag=null;dragIdx=null;
+  document.body.classList.remove('drag-active');
 }
 function itemRow(t,d,it,i){
   const row=el('div','item '+(it.type||'activity'));
@@ -525,51 +568,53 @@ function itemRow(t,d,it,i){
   const handle=el('div','drag','<svg width="10" height="16" viewBox="0 0 10 16" style="pointer-events:none" aria-hidden="true"><g fill="currentColor"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></g></svg>');
   handle.title='拖移排序／拖到日期頁籤移至該日';
   handle.onselectstart=()=>false;
-  // 由把手按下後啟用「整列」拖曳（避免把手命中範圍問題）
-  handle.onmousedown=()=>{row.draggable=true;
-    document.addEventListener('mouseup',()=>{row.draggable=false},{once:true})};
-  row.ondragstart=e=>{dragIdx=i;e.dataTransfer.setData('text/plain','');
-    e.dataTransfer.effectAllowed='move';setTimeout(()=>row.classList.add('dragging'),0)};
-  row.ondragend=()=>{row.draggable=false;dragIdx=null;rerender()};
-  handle.onpointerdown=e=>{if(e.pointerType!=='touch')return;e.preventDefault();
-    dragIdx=i;row.classList.add('dragging');try{handle.setPointerCapture(e.pointerId)}catch(_){}};
-  handle.onpointermove=e=>{if(e.pointerType!=='touch'||dragIdx==null)return;touchMark(e.clientX,e.clientY)};
-  handle.onpointerup=e=>{if(e.pointerType!=='touch'||dragIdx==null)return;touchDrop(e.clientX,e.clientY,d,t)};
-  handle.onpointercancel=()=>{if(dragIdx!=null){clearTouchMark();dragIdx=null;rerender()}};
+  handle.onpointerdown=e=>beginPointerDrag(e,row,i,d,t);
+  handle.onpointermove=movePointerDrag;
+  handle.onpointerup=endPointerDrag;
+  handle.onpointercancel=cancelPointerDrag;
   row.appendChild(handle);
   // 時間
   const tm=el('div','tm');
   if(it.type!=='note'){
-    const t1=el('input');t1.type='time';t1.value=it.t1||'';bind(t1,'t1');
-    const t2=el('input');t2.type='time';t2.value=it.t2||'';bind(t2,'t2');
+    const bindTime=(inp,k)=>{inp.onchange=()=>{it[k]=inp.value;
+      if(it.type==='transit'&&it.t1&&it.t2)it.dur=durationBetween(it.t1,it.t2);save();rerender()}};
+    const t1=el('input');t1.type='time';t1.value=it.t1||'';bindTime(t1,'t1');
+    const t2=el('input');t2.type='time';t2.value=it.t2||'';bindTime(t2,'t2');
     tm.append(t1,t2);
   }
   row.appendChild(tm);
   row.appendChild(el('div','ic',it.type==='transit'?(MODE_IC[it.mode]||'🚏'):it.type==='note'?'📌':'📍'));
   const bd=el('div','bd');
   if(it.type==='transit'){
-    const l1=el('div','sub');
+    if(it.t1&&it.t2)it.dur=durationBetween(it.t1,it.t2);
+    const l1=el('div','sub transit-fields');
     const ms=el('select');ms.style.width='90px';MODES.forEach(m=>{const o=el('option',null,m);o.value=m;ms.appendChild(o)});ms.value=it.mode||'地鐵';bind(ms,'mode');
-    const rt=el('input');rt.placeholder='路線（如 [機場線]福岡機場 >> 博多）';rt.value=it.route||'';bind(rt,'route');rt.style.flex='2';rt.style.minWidth='200px';
-    const du=el('input');du.placeholder='需時';du.value=it.dur||'';du.style.width='90px';bind(du,'dur');
-    const fa=el('input');fa.type='number';fa.placeholder='票價/人';fa.value=it.budget||'';fa.style.width='90px';bind(fa,'budget',1);
-    l1.append(ms,rt,du,fa);bd.appendChild(l1);
+    const rt=el('input','route-field');rt.placeholder='路線（如 [機場線]福岡機場 >> 博多）';rt.value=it.route||'';bind(rt,'route');
+    const du=el('input','transit-metric');du.placeholder='需時';du.value=it.dur||'';bind(du,'dur');
+    const fa=el('input','transit-metric');fa.type='number';fa.placeholder='票價/人';fa.value=it.budget||'';bind(fa,'budget',1);
+    const total=num(it.budget)*t.people;
+    const ttl=el('div','transit-metric transit-total'+(num(it.budget)?'':' empty'),num(it.budget)?`總價 ${fmt(total)}`:'總價 —');
+    ttl.title=`${t.people} 人總價`;
+    l1.append(ms,rt,du,fa,ttl);bd.appendChild(l1);
   }else if(it.type==='note'){
-    const n=el('input');n.placeholder='備註（如 *刷卡、隔日早餐先備）';n.value=it.name||'';bind(n,'name');
-    bd.appendChild(n);
+    const l2=el('div','sub');
+    const n=el('input');n.placeholder='備註（如 *刷卡、隔日早餐先備）';n.value=it.name||'';n.style.flex='1';bind(n,'name');
+    const lk=el('input','link-field');lk.placeholder='連結';lk.value=it.link||'';bind(lk,'link');
+    l2.append(n,lk);bd.appendChild(l2);
+    if(it.link)bd.appendChild(el('div','muted',`<a href="${esc(it.link)}" target="_blank">🔗 ${esc(it.link.slice(0,60))}</a>`));
   }else{
     const n=el('input');n.placeholder='計畫項目';n.value=it.name||'';n.style.fontWeight='600';bind(n,'name');
     bd.appendChild(n);
     const l2=el('div','sub');
     const no=el('input');no.placeholder='備註';no.value=it.note||'';no.style.flex='2';bind(no,'note');
     const bu=el('input');bu.type='number';bu.placeholder='預算/人';bu.value=it.budget||'';bu.style.width='90px';bind(bu,'budget',1);
-    const lk=el('input');lk.placeholder='連結';lk.value=it.link||'';lk.style.flex='1';bind(lk,'link');
+    const lk=el('input','link-field');lk.placeholder='連結';lk.value=it.link||'';bind(lk,'link');
     l2.append(no,bu,lk);bd.appendChild(l2);
     if(it.link)bd.appendChild(el('div','muted',`<a href="${esc(it.link)}" target="_blank">🔗 ${esc(it.link.slice(0,60))}</a>`));
   }
   row.appendChild(bd);
   // 金額+操作
-  if(it.type!=='note'&&num(it.budget))row.appendChild(el('div','calc',`<span class="muted" style="font-size:11px">×${t.people}</span> ${fmt(num(it.budget)*t.people)}`));
+  if(it.type!=='note'&&it.type!=='transit'&&num(it.budget))row.appendChild(el('div','calc',`<span class="muted" style="font-size:11px">×${t.people}</span> ${fmt(num(it.budget)*t.people)}`));
   const ops=el('div','ops');
   const del=el('button','rowdel','✕');del.onclick=()=>{d.items.splice(i,1);save();rerender()};
   ops.append(del);
@@ -854,7 +899,7 @@ function exportTripXlsx(){
       ['時間起','時間迄','類型','計畫項目/路線','備註/需時','預算/人','×'+t.people+'人','連結']];
     d.items.forEach(it=>{
       if(it.type==='transit')aoa.push([it.t1||'',it.t2||'','交通',(it.mode||'')+' '+(it.route||''),it.dur||'',num(it.budget),num(it.budget)*t.people,'']);
-      else if(it.type==='note')aoa.push(['','','備註',it.name||'','','','','']);
+      else if(it.type==='note')aoa.push(['','','備註',it.name||'','','','',it.link||'']);
       else aoa.push([it.t1||'',it.t2||'','活動',it.name||'',it.note||'',num(it.budget),num(it.budget)*t.people,it.link||'']);
     });
     add((d.date?d.date.slice(5).replace('-',''):'日')+'行程',aoa);
@@ -979,7 +1024,7 @@ function parseDayX(t,nm,aoa){
       const mode=MODES.find(m=>name.startsWith(m))||'其他';
       d.items.push({type:'transit',t1:xT(r[0]),t2:xT(r[1]),mode,
         route:name.startsWith(mode)?name.slice(mode.length).trim():name,dur:xs(r[4]),budget:num(r[5])});
-    }else if(tp==='備註')d.items.push({type:'note',name});
+    }else if(tp==='備註')d.items.push({type:'note',name,link:xs(r[7])});
     else if(name)d.items.push({type:'activity',t1:xT(r[0]),t2:xT(r[1]),name,note:xs(r[4]),budget:num(r[5]),link:xs(r[7])});
   }
   if(!d.title)d.title=nm.replace(/行程/,'');
